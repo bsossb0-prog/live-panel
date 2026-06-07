@@ -5,13 +5,13 @@ const fs = require('fs');
 const app = express();
 
 const upload = multer({ dest: 'uploads/' });
-
-// ৩টি আলাদা চ্যানেলের জন্য ডাটাবেস
-let streams = {
+let activeStreams = {
     "1": { isActive: false, process: null, startTime: null },
     "2": { isActive: false, process: null, startTime: null },
     "3": { isActive: false, process: null, startTime: null }
 };
+
+let masterVideoPath = null; // মাস্টার ভিডিওর পাথ এখানে সেভ থাকবে
 
 const USERS = { "nayem": "password123" }; 
 const VALID_TOKENS = new Set();
@@ -30,26 +30,40 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/status', (req, res) => {
-    res.json({ streams });
+    res.json({ streams: activeStreams });
 });
 
-app.post('/start-stream', upload.single('videoFile'), (req, res) => {
+// মাস্টার ভিডিও আপলোড করার জন্য আলাদা এন্ডপয়েন্ট
+app.post('/upload-master', upload.single('videoFile'), (req, res) => {
+    const { token } = req.body;
+    if (!VALID_TOKENS.has(token)) return res.status(403).send("Unauthorized!");
+    
+    if (req.file) {
+        // আগের মাস্টার ভিডিও থাকলে ডিলিট করে নতুনটি সেভ করা
+        if (masterVideoPath && fs.existsSync(masterVideoPath)) {
+            fs.unlinkSync(masterVideoPath);
+        }
+        masterVideoPath = req.file.path;
+        console.log("Master Video Saved at: " + masterVideoPath);
+        return res.send("Master Video uploaded successfully!");
+    }
+    res.status(400).send("No file uploaded!");
+});
+
+app.post('/start-stream', (req, res) => {
     const { channelId, platform, key, loop, token } = req.body;
 
     if (!VALID_TOKENS.has(token)) return res.status(403).send("Unauthorized!");
     if (!platform || !key) return res.status(400).send("Missing Key!");
+    if (!masterVideoPath) return res.status(400).send("Please upload a Master Video first!");
 
     const id = channelId;
-    if (streams[id].isActive) {
-        streams[id].process.kill('SIGKILL');
+    if (activeStreams[id].isActive) {
+        activeStreams[id].process.kill('SIGKILL');
     }
 
-    if (req.file) {
-        const source = req.file.path;
-        startFfmpeg(id, source, platform, key, loop);
-        return res.send("Stream started successfully for Channel " + id);
-    }
-    res.status(400).send("No video file uploaded!");
+    startFfmpeg(id, masterVideoPath, platform, key, loop);
+    res.send("Channel " + id + " is now LIVE!");
 });
 
 app.post('/stop-stream', (req, res) => {
@@ -57,11 +71,11 @@ app.post('/stop-stream', (req, res) => {
     if (!VALID_TOKENS.has(token)) return res.status(403).send("Unauthorized!");
     
     const id = channelId;
-    if (streams[id].isActive) {
-        streams[id].process.kill('SIGKILL');
-        streams[id].isActive = false;
-        streams[id].process = null;
-        streams[id].startTime = null;
+    if (activeStreams[id].isActive) {
+        activeStreams[id].process.kill('SIGKILL');
+        activeStreams[id].isActive = false;
+        activeStreams[id].process = null;
+        activeStreams[id].startTime = null;
         return res.send("Stopped!");
     }
     res.send("Not running!");
@@ -71,16 +85,14 @@ function startFfmpeg(id, input, platform, key, loop) {
     const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
     const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -c:v libx264 -preset ultrafast -b:v 800k -maxrate 800k -bufsize 1600k -pix_fmt yuv420p -g 50 -c:a aac -b:a 64k -f flv ${platform}/${key}`;
     
-    streams[id].startTime = Date.now();
-    streams[id].isActive = true;
-    streams[id].process = exec(ffmpegCmd);
+    activeStreams[id].startTime = Date.now();
+    activeStreams[id].isActive = true;
+    activeStreams[id].process = exec(ffmpegCmd);
 
-    streams[id].process.on('exit', () => {
-        streams[id].isActive = false;
-        streams[id].process = null;
-        streams[id].startTime = null;
-        // আমরা ফাইলটি ডিলিট করছি না কারণ অন্য চ্যানেল সেটি ব্যবহার করতে পারে। 
-        // Railway-তে মাঝে মাঝে অটোমেটিক ক্লিনিং হয়।
+    activeStreams[id].process.on('exit', () => {
+        activeStreams[id].isActive = false;
+        activeStreams[id].process = null;
+        activeStreams[id].startTime = null;
     });
 }
 
