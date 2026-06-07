@@ -4,6 +4,7 @@ const multer = require('multer');
 const fs = require('fs');
 const app = express();
 
+// ফাইল আপলোড করার জন্য সেটিংস
 const upload = multer({ dest: 'uploads/' });
 
 app.use(express.static('.'));
@@ -32,7 +33,6 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
         exec(`yt-dlp -f "best[ext=mp4]/best" -g ${source}`, (error, stdout, stderr) => {
             if (error) {
                 console.error("yt-dlp Error: " + stderr);
-                // এখানে res.send আগে পাঠানো হয়েছে তাই রিটার্ন করা হয়েছে
                 return; 
             }
             const directUrl = stdout.trim();
@@ -53,7 +53,7 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
 });
 
 function startFfmpeg(input, platform, key) {
-    // বিটরেট আরও কমিয়ে দেওয়া হয়েছে যাতে Railway সার্ভার প্রসেসটি কিল না করে
+    // একদম লো-বিটরেট এবং আল্ট্রাফাস্ট মোড যাতে Railway সার্ভার কিল না করে
     const ffmpegCmd = `ffmpeg -re -i "${input}" -c:v libx264 -preset ultrafast -b:v 800k -maxrate 800k -bufsize 1600k -pix_fmt yuv420p -g 50 -c:a aac -b:a 64k -f flv ${platform}/${key}`;
     
     console.log("Executing FFmpeg Command: " + ffmpegCmd);
@@ -72,4 +72,8 @@ function startFfmpeg(input, platform, key) {
     });
 }
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+// Railway-এর ডাইনামিক পোর্ট ব্যবহার করা হয়েছে
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
