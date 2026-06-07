@@ -8,13 +8,11 @@ const upload = multer({ dest: 'uploads/' });
 let activeStream = null;
 let streamStartTime = null;
 
-// 🔒 পাসওয়ার্ড এখানে সেট করুন (লগইন করার সময় এটি ব্যবহার হবে)
 const ADMIN_PASSWORD = "password123"; 
 
 app.use(express.static('.'));
 app.use(express.json());
 
-// সিম্পল লগইন সিস্টেম (টোকেন ঝামেলা দূর করতে)
 app.post('/login', (req, res) => {
     const { user, pass } = req.body;
     if (pass === ADMIN_PASSWORD) {
@@ -46,7 +44,7 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     } 
     
     if (type === 'link' && (source && (source.includes('youtube.com') || source.includes('youtu.be')))) {
-        exec(`yt-dlp --user-agent "Mozilla/5.0" -f "worst[ext=mp4]/worst" -g ${source}`, (error, stdout) => {
+        exec(`yt-dlp --user-agent "Mozilla/5.0" -f "best[ext=mp4]/best" -g ${source}`, (error, stdout) => {
             if (error) return;
             startFfmpeg(stdout.trim(), platform, key, loop);
         });
@@ -76,11 +74,11 @@ app.post('/stop-stream', (req, res) => {
 function startFfmpeg(input, platform, key, loop) {
     const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
     
-    // একদম সর্বনিম্ন সেটিংস (Ultra-Low Resource) যাতে সার্ভার ক্র্যাশ না করে
-    // এখানে বিটরেট মাত্র 400k করা হয়েছে এবং সবচেয়ে ফাস্ট প্রিসেট ব্যবহার করা হয়েছে
-    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -c:v libx264 -preset ultrafast -b:v 400k -maxrate 400k -bufsize 800k -pix_fmt yuv420p -g 50 -c:a aac -b:a 64k -f flv ${platform}/${key}`;
+    // বিটরেট বাড়িয়ে ১২০০k করা হয়েছে যাতে ভিডিও পরিষ্কার হয়
+    // এবং -vf "scale=1280:720" যোগ করা হয়েছে যাতে রেজোলিউশন ঠিক থাকে
+    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "scale=1280:720" -c:v libx264 -preset ultrafast -b:v 1200k -maxrate 1200k -bufsize 2400k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
     
-    console.log("Starting Ultra-Low Stream...");
+    console.log("Starting High Quality Stream...");
     streamStartTime = Date.now();
     activeStream = exec(ffmpegCmd);
 
