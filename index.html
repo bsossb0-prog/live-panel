@@ -3,14 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Channel Live Panel</title>
+    <title>Multi-Stream Master Panel</title>
     <style>
         body { background-color: #050510; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .main-container { width: 95%; max-width: 500px; }
         .panel { background-color: #111125; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid #1a1a3a; margin-bottom: 20px; position: relative; }
         h2 { text-align: center; color: #00d2ff; font-size: 22px; margin-bottom: 20px; text-transform: uppercase; }
         
-        .channel-box { background: #1a1a3a; padding: 15px; border-radius: 15px; border: 1px solid #2a2a4a; margin-bottom: 20px; position: relative; }
+        /* মাস্টার আপলোড সেকশন */
+        .master-upload { background: linear-gradient(145deg, #1a1a3a, #0d0d20); padding: 20px; border-radius: 15px; border: 2px solid #00d2ff; margin-bottom: 25px; text-align: center; }
+        .master-upload h3 { color: #00d2ff; font-size: 16px; margin-bottom: 10px; }
+
+        .channel-box { background: #1a1a3a; padding: 15px; border-radius: 15px; border: 1px solid #2a2a4a; margin-bottom: 20px; }
         .channel-title { color: #00d2ff; font-weight: bold; margin-bottom: 10px; display: block; font-size: 16px; }
         
         .timer-display { text-align: center; margin-bottom: 15px; padding: 10px; border: 2px dashed #00d2ff; border-radius: 10px; background: rgba(0, 210, 255, 0.05); }
@@ -22,7 +26,6 @@
         
         .row { display: flex; gap: 10px; }
         .row div { flex: 1; }
-
         .hidden { display: none !important; }
         .start-btn { width: 100%; padding: 12px; background-color: #00d2ff; border: none; border-radius: 8px; color: #050510; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
         .stop-btn { width: 100%; padding: 12px; background-color: #ff4b2b; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
@@ -48,8 +51,15 @@
 
 <div id="mainPanel" class="main-container" style="display:none;">
     <button class="logout-btn" onclick="logout()">Logout</button>
-    <h2>Multi-Live Panel</h2>
+    <h2>Multi-Stream Master</h2>
     
+    <!-- মাস্টার ভিডিও আপলোড সেকশন -->
+    <div class="master-upload">
+        <h3>📁 Master Video Source</h3>
+        <input type="file" id="masterFile" accept="video/*">
+        <p style="font-size: 11px; color: #aaa; margin-top: 8px;">Upload one video to use for all channels</p>
+    </div>
+
     <!-- Channel 1 -->
     <div class="panel" id="panel-1">
         <span class="channel-title">Channel 1</span>
@@ -58,21 +68,6 @@
             <span class="timer-val" id="timer-1">00:00:00</span>
         </div>
         <div class="inputs-area" id="inputs-1">
-            <div class="input-group">
-                <label>Source Type</label>
-                <select id="type-1" onchange="toggleInput(1)">
-                    <option value="link">🔗 YouTube Link</option>
-                    <option value="file">📁 Upload File</option>
-                </select>
-            </div>
-            <div class="input-group" id="link-group-1">
-                <label>Video URL</label>
-                <input type="text" id="src-1" placeholder="https://youtube.com/...">
-            </div>
-            <div class="input-group hidden" id="file-group-1">
-                <label>Select File</label>
-                <input type="file" id="file-1" accept="video/*">
-            </div>
             <div class="row">
                 <div class="input-group">
                     <label>Stream Key</label>
@@ -80,7 +75,7 @@
                 </div>
                 <div class="input-group">
                     <label>Duration (Mins)</label>
-                    <input type="number" id="time-1" placeholder="e.g. 60" value="0">
+                    <input type="number" id="time-1" placeholder="0" value="0">
                 </div>
             </div>
             <div class="input-group">
@@ -98,21 +93,6 @@
             <span class="timer-val" id="timer-2">00:00:00</span>
         </div>
         <div class="inputs-area" id="inputs-2">
-            <div class="input-group">
-                <label>Source Type</label>
-                <select id="type-2" onchange="toggleInput(2)">
-                    <option value="link">🔗 YouTube Link</option>
-                    <option value="file">📁 Upload File</option>
-                </select>
-            </div>
-            <div class="input-group" id="link-group-2">
-                <label>Video URL</label>
-                <input type="text" id="src-2" placeholder="https://youtube.com/...">
-            </div>
-            <div class="input-group hidden" id="file-group-2">
-                <label>Select File</label>
-                <input type="file" id="file-2" accept="video/*">
-            </div>
             <div class="row">
                 <div class="input-group">
                     <label>Stream Key</label>
@@ -120,7 +100,7 @@
                 </div>
                 <div class="input-group">
                     <label>Duration (Mins)</label>
-                    <input type="number" id="time-2" placeholder="e.g. 60" value="0">
+                    <input type="number" id="time-2" placeholder="0" value="0">
                 </div>
             </div>
             <div class="input-group">
@@ -138,21 +118,6 @@
             <span class="timer-val" id="timer-3">00:00:00</span>
         </div>
         <div class="inputs-area" id="inputs-3">
-            <div class="input-group">
-                <label>Source Type</label>
-                <select id="type-3" onchange="toggleInput(3)">
-                    <option value="link">🔗 YouTube Link</option>
-                    <option value="file">📁 Upload File</option>
-                </select>
-            </div>
-            <div class="input-group" id="link-group-3">
-                <label>Video URL</label>
-                <input type="text" id="src-3" placeholder="https://youtube.com/...">
-            </div>
-            <div class="input-group hidden" id="file-group-3">
-                <label>Select File</label>
-                <input type="file" id="file-3" accept="video/*">
-            </div>
             <div class="row">
                 <div class="input-group">
                     <label>Stream Key</label>
@@ -160,7 +125,7 @@
                 </div>
                 <div class="input-group">
                     <label>Duration (Mins)</label>
-                    <input type="number" id="time-3" placeholder="e.g. 60" value="0">
+                    <input type="number" id="time-3" placeholder="0" value="0">
                 </div>
             </div>
             <div class="input-group">
@@ -203,12 +168,6 @@
 
     function logout() { localStorage.removeItem('live_token'); location.reload(); }
 
-    function toggleInput(id) {
-        const type = document.getElementById(`type-${id}`).value;
-        document.getElementById(`link-group-${id}`).classList.toggle('hidden', type === 'file');
-        document.getElementById(`file-group-${id}`).classList.toggle('hidden', type === 'link');
-    }
-
     async function syncStatuses() {
         try {
             const res = await fetch('/status');
@@ -245,22 +204,19 @@
     }
 
     async function startStream(id) {
+        const masterFile = document.getElementById('masterFile').files[0];
+        if (!masterFile) { alert("প্রথমে একটি Master Video ফাইল আপলোড করুন!"); return; }
+
         const formData = new FormData();
         formData.append('channelId', id);
-        formData.append('type', document.getElementById(`type-${id}`).value);
         formData.append('key', document.getElementById(`key-${id}`).value);
         formData.append('platform', 'rtmp://a.rtmp.youtube.com/live2');
         formData.append('loop', document.getElementById(`loop-${id}`).checked);
         formData.append('duration', document.getElementById(`time-${id}`).value);
         formData.append('token', sessionToken);
+        formData.append('videoFile', masterFile);
 
-        if (document.getElementById(`type-${id}`).value === 'link') {
-            formData.append('source', document.getElementById(`src-${id}`).value);
-        } else {
-            const file = document.getElementById(`file-${id}`).files[0];
-            if (!file) { alert("Select File!"); return; }
-            formData.append('videoFile', file);
-        }
+        if (!document.getElementById(`key-${id}`).value) { alert("স্ট্রিম কি বসান!"); return; }
 
         const res = await fetch('/start-stream', { method: 'POST', body: formData });
         if (res.ok) {
