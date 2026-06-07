@@ -5,14 +5,11 @@ const fs = require('fs');
 const app = express();
 
 const upload = multer({ dest: 'uploads/' });
-let streams = {
-    1: { process: null, startTime: null },
-    2: { process: null, startTime: null },
-    3: { process: null, startTime: null }
-};
-let masterVideoPath = null;
+let activeStream = null;
+let streamStartTime = null;
 
-const USERS = { "nayem": "password123" }; // ইউজারনেম পাসওয়ার্ড সেট করুন
+// ইউজার সেটআপ
+const USERS = { "nayem": "password123" }; 
 const VALID_TOKENS = new Set();
 
 app.use(express.static('.'));
@@ -29,64 +26,67 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/status', (req, res) => {
-    const status = {};
-    for (let id in streams) {
-        status[id] = { isActive: streams[id].process !== null, startTime: streams[id].startTime };
-    }
-    res.json({ streams: status });
+    res.json({ isActive: activeStream !== null, startTime: streamStartTime });
 });
 
-app.post('/upload-master', upload.single('videoFile'), (req, res) => {
-    const { token } = req.body;
+app.post('/start-stream', upload.single('videoFile'), (req, res) => {
+    const { type, platform, key, loop, token } = req.body;
+    let source = req.body.source;
+
     if (!VALID_TOKENS.has(token)) return res.status(403).send("Unauthorized");
-    if (req.file) {
-        if (masterVideoPath) try { fs.unlinkSync(masterVideoPath); } catch(e){}
-        masterVideoPath = req.file.path;
-        return res.send("Master Video Ready!");
+    if (!platform || !key) return res.status(400).send("Missing details!");
+
+    if (activeStream) {
+        activeStream.kill('SIGKILL');
+        activeStream = null;
     }
-    res.status(400).send("Upload failed");
-});
 
-app.post('/start-stream', (req, res) => {
-    const { channelId, key, duration, loop, token, platform } = req.body;
-    if (!VALID_TOKENS.has(token)) return res.status(403).send("Unauthorized");
-    if (!masterVideoPath) return res.status(400).send("Please upload master video first!");
-
-    const id = channelId;
-    if (streams[id].process) streams[id].process.kill('SIGKILL');
-
-    const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
-    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${masterVideoPath}" -c:v libx264 -preset ultrafast -b:v 800k -maxrate 800k -bufsize 1600k -pix_fmt yuv420p -g 50 -c:a aac -b:a 64k -f flv ${platform}/${key}`;
+    if (type === 'file' && req.file) {
+        source = req.file.path; 
+        startFfmpeg(source, platform, key, loop);
+        return res.send("File upload successful! Stream starting...");
+    } 
     
-    streams[id].startTime = Date.now();
-    streams[id].process = exec(ffmpegCmd);
-
-    if (duration && parseInt(duration) > 0) {
-        setTimeout(() => stopStream(id), parseInt(duration) * 60 * 1000);
+    if (type === 'link' && (source && (source.includes('youtube.com') || source.includes('youtu.be')))) {
+        exec(`yt-dlp --user-agent "Mozilla/5.0" -f "best[ext=mp4]/best" -g ${source}`, (error, stdout) => {
+            if (error) return;
+            startFfmpeg(stdout.trim(), platform, key, loop);
+        });
+        return res.send("YouTube link processed! Stream starting...");
+    } 
+    
+    if (source) {
+        startFfmpeg(source, platform, key, loop);
+        return res.send("Direct link processed! Stream starting...");
     }
 
-    res.send("Channel Live!");
+    res.status(400).send("Invalid source!");
 });
 
 app.post('/stop-stream', (req, res) => {
-    const { channelId, token } = req.body;
+    const { token } = req.body;
     if (!VALID_TOKENS.has(token)) return res.status(403).send("Unauthorized");
-    const id = channelId;
-    if (streams[id].process) {
-        streams[id].process.kill('SIGKILL');
-        streams[id].process = null;
-        streams[id].startTime = null;
+    if (activeStream) {
+        activeStream.kill('SIGKILL');
+        activeStream = null;
+        streamStartTime = null;
         return res.send("Stopped!");
     }
-    res.send("Not running");
+    res.send("No stream running");
 });
 
-function stopStream(id) {
-    if (streams[id].process) {
-        streams[id].process.kill('SIGKILL');
-        streams[id].process = null;
-        streams[id].startTime = null;
-    }
+function startFfmpeg(input, platform, key, loop) {
+    const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
+    // একদম লো-রিসোর্স সেটিংস যাতে সার্ভার ক্র্যাশ না করে
+    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -c:v libx264 -preset ultrafast -b:v 600k -maxrate 600k -bufsize 1200k -pix_fmt yuv420p -g 50 -c:a aac -b:a 64k -f flv ${platform}/${key}`;
+    
+    streamStartTime = Date.now();
+    activeStream = exec(ffmpegCmd);
+    activeStream.on('exit', () => {
+        if (input.includes('uploads/')) try { fs.unlinkSync(input); } catch(e){}
+        activeStream = null;
+        streamStartTime = null;
+    });
 }
 
 const PORT = process.env.PORT || 3000;
