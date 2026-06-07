@@ -74,11 +74,10 @@ app.post('/stop-stream', (req, res) => {
 function startFfmpeg(input, platform, key, loop) {
     const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
     
-    // বিটরেট বাড়িয়ে ১২০০k করা হয়েছে যাতে ভিডিও পরিষ্কার হয়
-    // এবং -vf "scale=1280:720" যোগ করা হয়েছে যাতে রেজোলিউশন ঠিক থাকে
-    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "scale=1280:720" -c:v libx264 -preset ultrafast -b:v 1200k -maxrate 1200k -bufsize 2400k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
+    // পরিবর্তন এখানে: scale=1280:-2 ব্যবহার করা হয়েছে যাতে ভিডিওর রেশিও ঠিক থাকে
+    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "scale=1280:-2" -c:v libx264 -preset ultrafast -b:v 1200k -maxrate 1200k -bufsize 2400k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
     
-    console.log("Starting High Quality Stream...");
+    console.log("Starting Aspect-Ratio Fixed Stream...");
     streamStartTime = Date.now();
     activeStream = exec(ffmpegCmd);
 
