@@ -10,26 +10,28 @@
         .panel { background-color: #111125; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid #1a1a3a; margin-bottom: 20px; position: relative; }
         h2 { text-align: center; color: #00d2ff; font-size: 22px; margin-bottom: 20px; text-transform: uppercase; }
         
-        /* মাস্টার আপলোড সেকশন */
         .master-upload { background: linear-gradient(145deg, #1a1a3a, #0d0d20); padding: 20px; border-radius: 15px; border: 2px solid #00d2ff; margin-bottom: 25px; text-align: center; }
         .master-upload h3 { color: #00d2ff; font-size: 16px; margin-bottom: 10px; }
 
+        /* প্রোগ্রেস বার স্টাইল */
+        .progress-container { display: none; margin: 15px 0; text-align: center; }
+        .progress-bar-bg { background: #050510; border-radius: 10px; height: 12px; width: 100%; border: 1px solid #00d2ff; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #00d2ff, #00a2ff); height: 100%; width: 0%; transition: width 0.2s; }
+        #progressPercent { font-size: 13px; color: #00d2ff; margin-top: 5px; display: block; }
+
         .channel-box { background: #1a1a3a; padding: 15px; border-radius: 15px; border: 1px solid #2a2a4a; margin-bottom: 20px; }
         .channel-title { color: #00d2ff; font-weight: bold; margin-bottom: 10px; display: block; font-size: 16px; }
-        
         .timer-display { text-align: center; margin-bottom: 15px; padding: 10px; border: 2px dashed #00d2ff; border-radius: 10px; background: rgba(0, 210, 255, 0.05); }
         .timer-val { color: #00d2ff; font-size: 24px; font-weight: bold; font-family: monospace; }
-
         .input-group { margin-bottom: 10px; }
         label { display: block; margin-bottom: 3px; font-size: 12px; color: #aaa; }
         input, select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #2a2a4a; background: #0d0d20; color: white; font-size: 13px; box-sizing: border-box; outline: none; }
-        
         .row { display: flex; gap: 10px; }
         .row div { flex: 1; }
         .hidden { display: none !important; }
         .start-btn { width: 100%; padding: 12px; background-color: #00d2ff; border: none; border-radius: 8px; color: #050510; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
         .stop-btn { width: 100%; padding: 12px; background-color: #ff4b2b; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
-        
+        .upload-btn { width: 100%; padding: 10px; background: #00d2ff; border: none; border-radius: 8px; color: #050510; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .logout-btn { position: absolute; top: 10px; right: 10px; background: none; border: 1px solid #ff4b2b; color: #ff4b2b; padding: 3px 8px; border-radius: 5px; cursor: pointer; font-size: 11px; }
         
         #loginPage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050510; display: flex; justify-content: center; align-items: center; z-index: 1000; }
@@ -53,11 +55,19 @@
     <button class="logout-btn" onclick="logout()">Logout</button>
     <h2>Multi-Stream Master</h2>
     
-    <!-- মাস্টার ভিডিও আপলোড সেকশন -->
     <div class="master-upload">
         <h3>📁 Master Video Source</h3>
         <input type="file" id="masterFile" accept="video/*">
-        <p style="font-size: 11px; color: #aaa; margin-top: 8px;">Upload one video to use for all channels</p>
+        
+        <div id="progContainer" class="progress-container">
+            <div class="progress-bar-bg">
+                <div id="progFill" class="progress-bar-fill"></div>
+            </div>
+            <span id="progPercent">Uploading... 0%</span>
+        </div>
+
+        <button class="upload-btn" id="upBtn" onclick="uploadMaster()">Upload Master Video</button>
+        <p id="uploadStatus" style="font-size: 11px; color: #aaa; margin-top: 8px;">No video uploaded yet</p>
     </div>
 
     <!-- Channel 1 -->
@@ -168,6 +178,49 @@
 
     function logout() { localStorage.removeItem('live_token'); location.reload(); }
 
+    // মাস্টার ভিডিও আপলোড ফাংশন
+    async function uploadMaster() {
+        const file = document.getElementById('masterFile').files[0];
+        if (!file) { alert("প্রথমে একটি ভিডিও ফাইল সিলেক্ট করুন!"); return; }
+
+        const formData = new FormData();
+        formData.append('videoFile', file);
+        formData.append('token', sessionToken);
+
+        const btn = document.getElementById('upBtn');
+        const progContainer = document.getElementById('progContainer');
+        const progFill = document.getElementById('progFill');
+        const progPercent = document.getElementById('progressPercent');
+        const statusText = document.getElementById('uploadStatus');
+
+        btn.disabled = true;
+        progContainer.style.display = 'block';
+
+        const xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                progFill.style.width = percent + '%';
+                progPercent.innerText = `Uploading... ${percent}%`;
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                alert("মাস্টার ভিডিও সফলভাবে আপলোড হয়েছে!");
+                statusText.innerText = "✅ Master Video Ready!";
+                statusText.style.color = "#00ff00";
+            } else {
+                alert("আপলোডে সমস্যা হয়েছে!");
+            }
+            btn.disabled = false;
+            setTimeout(() => { progContainer.style.display = 'none'; }, 3000);
+        };
+
+        xhr.open('POST', '/upload-master', true);
+        xhr.send(formData);
+    }
+
     async function syncStatuses() {
         try {
             const res = await fetch('/status');
@@ -204,9 +257,6 @@
     }
 
     async function startStream(id) {
-        const masterFile = document.getElementById('masterFile').files[0];
-        if (!masterFile) { alert("প্রথমে একটি Master Video ফাইল আপলোড করুন!"); return; }
-
         const formData = new FormData();
         formData.append('channelId', id);
         formData.append('key', document.getElementById(`key-${id}`).value);
@@ -214,7 +264,6 @@
         formData.append('loop', document.getElementById(`loop-${id}`).checked);
         formData.append('duration', document.getElementById(`time-${id}`).value);
         formData.append('token', sessionToken);
-        formData.append('videoFile', masterFile);
 
         if (!document.getElementById(`key-${id}`).value) { alert("স্ট্রিম কি বসান!"); return; }
 
@@ -222,7 +271,10 @@
         if (res.ok) {
             alert("Channel " + id + " Started!");
             syncStatuses();
-        } else alert("Error Starting Stream!");
+        } else {
+            const err = await res.text();
+            alert("Error: " + err);
+        }
     }
 
     async function stopStream(id) {
