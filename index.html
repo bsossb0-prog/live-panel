@@ -3,41 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Stream Master Panel</title>
+    <title>Pro Multi-Stream Master Panel</title>
     <style>
-        body { background-color: #050510; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .main-container { width: 95%; max-width: 500px; }
+        body { background-color: #050510; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; overflow-x: hidden; }
+        .main-container { width: 95%; max-width: 500px; margin: 20px 0; }
         .panel { background-color: #111125; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid #1a1a3a; margin-bottom: 20px; position: relative; }
-        h2 { text-align: center; color: #00d2ff; font-size: 22px; margin-bottom: 20px; text-transform: uppercase; }
+        h2 { text-align: center; color: #00d2ff; font-size: 22px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
         
-        .master-upload { background: linear-gradient(145deg, #1a1a3a, #0d0d20); padding: 20px; border-radius: 15px; border: 2px solid #00d2ff; margin-bottom: 25px; text-align: center; }
-        .master-upload h3 { color: #00d2ff; font-size: 16px; margin-bottom: 10px; }
+        /* মাস্টার আপলোড সেকশন */
+        .master-upload { background: linear-gradient(145deg, #1a1a3a, #0d0d20); padding: 20px; border-radius: 15px; border: 2px solid #00d2ff; margin-bottom: 25px; text-align: center; box-shadow: 0 0 15px rgba(0, 210, 255, 0.2); }
+        .master-upload h3 { color: #00d2ff; font-size: 16px; margin-bottom: 10px; text-transform: uppercase; }
 
-        /* প্রোগ্রেস বার স্টাইল */
+        /* প্রোগ্রেস বার */
         .progress-container { display: none; margin: 15px 0; text-align: center; }
         .progress-bar-bg { background: #050510; border-radius: 10px; height: 12px; width: 100%; border: 1px solid #00d2ff; overflow: hidden; }
         .progress-bar-fill { background: linear-gradient(90deg, #00d2ff, #00a2ff); height: 100%; width: 0%; transition: width 0.2s; }
-        #progressPercent { font-size: 13px; color: #00d2ff; margin-top: 5px; display: block; }
+        #progressPercent { font-size: 13px; color: #00d2ff; margin-top: 5px; display: block; font-weight: bold; }
 
         .channel-box { background: #1a1a3a; padding: 15px; border-radius: 15px; border: 1px solid #2a2a4a; margin-bottom: 20px; }
         .channel-title { color: #00d2ff; font-weight: bold; margin-bottom: 10px; display: block; font-size: 16px; }
+        
         .timer-display { text-align: center; margin-bottom: 15px; padding: 10px; border: 2px dashed #00d2ff; border-radius: 10px; background: rgba(0, 210, 255, 0.05); }
-        .timer-val { color: #00d2ff; font-size: 24px; font-weight: bold; font-family: monospace; }
+        .timer-val { color: #00d2ff; font-size: 24px; font-weight: bold; font-family: 'Courier New', Courier, monospace; text-shadow: 0 0 10px #00d2ff; }
+
         .input-group { margin-bottom: 10px; }
         label { display: block; margin-bottom: 3px; font-size: 12px; color: #aaa; }
         input, select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #2a2a4a; background: #0d0d20; color: white; font-size: 13px; box-sizing: border-box; outline: none; }
+        
         .row { display: flex; gap: 10px; }
         .row div { flex: 1; }
         .hidden { display: none !important; }
-        .start-btn { width: 100%; padding: 12px; background-color: #00d2ff; border: none; border-radius: 8px; color: #050510; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
-        .stop-btn { width: 100%; padding: 12px; background-color: #ff4b2b; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
-        .upload-btn { width: 100%; padding: 10px; background: #00d2ff; border: none; border-radius: 8px; color: #050510; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .start-btn { width: 100%; padding: 12px; background-color: #00d2ff; border: none; border-radius: 8px; color: #050510; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; transition: 0.3s; }
+        .stop-btn { width: 100%; padding: 12px; background-color: #ff4b2b; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; transition: 0.3s; }
+        .upload-btn { width: 100%; padding: 12px; background: #00d2ff; border: none; border-radius: 8px; color: #050510; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
         .logout-btn { position: absolute; top: 10px; right: 10px; background: none; border: 1px solid #ff4b2b; color: #ff4b2b; padding: 3px 8px; border-radius: 5px; cursor: pointer; font-size: 11px; }
         
         #loginPage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050510; display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .login-box { background: #111125; padding: 40px; border-radius: 20px; border: 1px solid #1a1a3a; width: 300px; text-align: center; }
-        .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #2a2a4a; background: #1a1a3a; color: white; box-sizing: border-box; }
-        .login-box button { width: 100%; padding: 12px; background: #00d2ff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .login-box { background: #111125; padding: 40px; border-radius: 20px; border: 1px solid #1a1a3a; width: 300px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .login-box h2 { color: #00d2ff; margin-bottom: 20px; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #2a2a4a; background: #1a1a3a; color: white; box-sizing: border-box; }
+        .login-box button { width: 100%; padding: 12px; background: #00d2ff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -63,7 +68,7 @@
             <div class="progress-bar-bg">
                 <div id="progFill" class="progress-bar-fill"></div>
             </div>
-            <span id="progPercent">Uploading... 0%</span>
+            <span id="progressPercent">Uploading... 0%</span>
         </div>
 
         <button class="upload-btn" id="upBtn" onclick="uploadMaster()">Upload Master Video</button>
@@ -178,49 +183,6 @@
 
     function logout() { localStorage.removeItem('live_token'); location.reload(); }
 
-    // মাস্টার ভিডিও আপলোড ফাংশন
-    async function uploadMaster() {
-        const file = document.getElementById('masterFile').files[0];
-        if (!file) { alert("প্রথমে একটি ভিডিও ফাইল সিলেক্ট করুন!"); return; }
-
-        const formData = new FormData();
-        formData.append('videoFile', file);
-        formData.append('token', sessionToken);
-
-        const btn = document.getElementById('upBtn');
-        const progContainer = document.getElementById('progContainer');
-        const progFill = document.getElementById('progFill');
-        const progPercent = document.getElementById('progressPercent');
-        const statusText = document.getElementById('uploadStatus');
-
-        btn.disabled = true;
-        progContainer.style.display = 'block';
-
-        const xhr = new XMLHttpRequest();
-        xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-                const percent = Math.round((e.loaded / e.total) * 100);
-                progFill.style.width = percent + '%';
-                progPercent.innerText = `Uploading... ${percent}%`;
-            }
-        };
-
-        xhr.onload = () => {
-            if (xhr.status === 200) {
-                alert("মাস্টার ভিডিও সফলভাবে আপলোড হয়েছে!");
-                statusText.innerText = "✅ Master Video Ready!";
-                statusText.style.color = "#00ff00";
-            } else {
-                alert("আপলোডে সমস্যা হয়েছে!");
-            }
-            btn.disabled = false;
-            setTimeout(() => { progContainer.style.display = 'none'; }, 3000);
-        };
-
-        xhr.open('POST', '/upload-master', true);
-        xhr.send(formData);
-    }
-
     async function syncStatuses() {
         try {
             const res = await fetch('/status');
@@ -254,6 +216,48 @@
             let s = diff % 60;
             document.getElementById(`timer-${id}`).innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }, 1000);
+    }
+
+    async function uploadMaster() {
+        const file = document.getElementById('masterFile').files[0];
+        if (!file) { alert("প্রথমে একটি ভিডিও ফাইল সিলেক্ট করুন!"); return; }
+
+        const formData = new FormData();
+        formData.append('token', sessionToken); 
+        formData.append('videoFile', file);
+
+        const btn = document.getElementById('upBtn');
+        const progContainer = document.getElementById('progContainer');
+        const progFill = document.getElementById('progFill');
+        const progPercent = document.getElementById('progressPercent');
+        const statusText = document.getElementById('uploadStatus');
+
+        btn.disabled = true;
+        progContainer.style.display = 'block';
+
+        const xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                progFill.style.width = percent + '%';
+                progPercent.innerText = `Uploading... ${percent}%`;
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                alert("মাস্টার ভিডিও সফলভাবে আপলোড হয়েছে!");
+                statusText.innerText = "✅ Master Video Ready!";
+                statusText.style.color = "#00ff00";
+            } else {
+                alert("Error: " + xhr.responseText);
+            }
+            btn.disabled = false;
+            setTimeout(() => { progContainer.style.display = 'none'; }, 3000);
+        };
+
+        xhr.open('POST', '/upload-master', true);
+        xhr.send(formData);
     }
 
     async function startStream(id) {
