@@ -7,21 +7,31 @@
     <style>
         body { background-color: #050510; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .panel { background-color: #111125; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); width: 90%; max-width: 400px; border: 1px solid #1a1a3a; }
-        h2 { text-align: center; color: #00d2ff; font-size: 22px; margin-bottom: 25px; text-transform: uppercase; }
+        h2 { text-align: center; color: #00d2ff; font-size: 22px; margin-bottom: 15px; text-transform: uppercase; }
+        
+        /* টাইমার স্টাইল */
+        .timer-container { text-align: center; margin-bottom: 20px; padding: 15px; border: 2px dashed #00d2ff; border-radius: 15px; background: rgba(0, 210, 255, 0.05); }
+        #statusText { color: #aaa; font-size: 14px; margin-bottom: 5px; display: block; }
+        #timer { color: #00d2ff; font-size: 32px; font-weight: bold; font-family: 'Courier New', Courier, monospace; text-shadow: 0 0 10px #00d2ff; }
+
         .input-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-size: 13px; color: #aaa; }
         input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #2a2a4a; background: #1a1a3a; color: white; font-size: 14px; box-sizing: border-box; outline: none; }
         .hidden { display: none; }
         .start-btn { width: 100%; padding: 15px; background-color: #00d2ff; border: none; border-radius: 8px; color: #050510; font-weight: bold; cursor: pointer; font-size: 16px; text-transform: uppercase; margin-top: 20px; transition: 0.3s; }
         .start-btn:disabled { background-color: #555; cursor: not-allowed; }
-        .status-box { text-align: center; margin-bottom: 20px; padding: 10px; border: 1px dashed #00d2ff; border-radius: 10px; color: #00d2ff; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="panel">
     <h2>LIVE PANEL</h2>
-    <div id="status" class="status-box">Status: Ready to Stream</div>
+    
+    <!-- টাইমার সেকশন -->
+    <div class="timer-container">
+        <span id="statusText">Status: Ready to Stream</span>
+        <div id="timer">00:00:00</div>
+    </div>
     
     <div class="input-group">
         <label>Stream Name</label>
@@ -63,15 +73,32 @@
 </div>
 
 <script>
+    let timerInterval;
+    let seconds = 0;
+
     function toggleSource() {
         const type = document.getElementById('sourceType').value;
         document.getElementById('linkInput').classList.toggle('hidden', type === 'file');
         document.getElementById('fileInput').classList.toggle('hidden', type === 'link');
     }
 
+    // টাইমার চালানোর ফাংশন
+    function startTimer() {
+        clearInterval(timerInterval);
+        seconds = 0;
+        timerInterval = setInterval(() => {
+            seconds++;
+            let h = Math.floor(seconds / 3600);
+            let m = Math.floor((seconds % 3600) / 60);
+            let s = seconds % 60;
+            document.getElementById('timer').innerText = 
+                `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }, 1000);
+    }
+
     async function startStream() {
         const btn = document.getElementById('startBtn');
-        const status = document.getElementById('status');
+        const statusText = document.getElementById('statusText');
         const type = document.getElementById('sourceType').value;
         const key = document.getElementById('streamKey').value;
         const platform = document.getElementById('platform').value;
@@ -91,21 +118,28 @@
             formData.append('videoFile', file);
         }
 
-        btn.innerText = "STREAMING...";
+        btn.innerText = "CONNECTING...";
         btn.disabled = true;
-        status.innerText = "Status: Processing... Please wait";
+        statusText.innerText = "Status: Sending Request...";
 
         try {
             const response = await fetch('/start-stream', {
                 method: 'POST',
-                body: formData // JSON এর বদলে FormData ব্যবহার করছি আপলোডের জন্য
+                body: formData
             });
             const result = await response.text();
-            alert(result);
-            status.innerText = "Status: Live Stream Started!";
+            
+            if (response.ok) {
+                alert(result);
+                statusText.innerText = "Status: Live Stream Started!";
+                startTimer(); // সার্ভার থেকে ওকে পাওয়ার পর টাইমার শুরু হবে
+            } else {
+                alert("সার্ভার এরর: " + result);
+                statusText.innerText = "Status: Error Occurred";
+            }
         } catch (error) {
-            alert("সার্ভার এরর! দয়া করে লগ চেক করুন।");
-            status.innerText = "Status: Error Occurred";
+            alert("সার্ভারের সাথে কানেক্ট করা যাচ্ছে না!");
+            statusText.innerText = "Status: Connection Failed";
         } finally {
             btn.innerText = "Start Live Stream";
             btn.disabled = false;
