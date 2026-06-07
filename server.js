@@ -12,30 +12,45 @@ app.post('/start-stream', (req, res) => {
         return res.send("সবগুলো ঘর পূরণ করুন!");
     }
 
-    let inputSource = source;
+    let finalInput = source;
 
-    // ইউটিউব লিংক হলে yt-dlp দিয়ে সরাসরি সোর্স বের করা
+    // ইউটিউব লিংক হলে yt-dlp দিয়ে আসল সোর্স বের করা
     if (type === 'link' && (source.includes('youtube.com') || source.includes('youtu.be'))) {
-        inputSource = `$(yt-dlp -f "best[ext=mp4]/best" -g ${source})`;
+        console.log("Fetching direct URL from YouTube...");
+        
+        exec(`yt-dlp -f "best[ext=mp4]/best" -g ${source}`, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`yt-dlp Error: ${error.message}`);
+                return res.send("ভিডিওর লিংক খুঁজে পাওয়া যায়নি। অন্য লিংক চেষ্টা করুন।");
+            }
+            
+            finalInput = stdout.trim();
+            console.log("Direct URL found, starting FFmpeg...");
+            startFfmpeg(finalInput, platform, key);
+        });
+    } else {
+        startFfmpeg(finalInput, platform, key);
     }
 
-    // CPU চাপ কমাতে -preset ultrafast এবং বিটরেট কমিয়ে দেওয়া হয়েছে
-    const ffmpegCmd = `ffmpeg -re -i ${inputSource} -c:v libx264 -preset ultrafast -b:v 1500k -maxrate 1500k -bufsize 3000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 96k -f flv ${platform}/${key}`;
+    res.send("প্রসেস শুরু হয়েছে! দয়া করে ১-২ মিনিট অপেক্ষা করে ইউটিউব স্টুডিও চেক করুন।");
+});
 
-    console.log("Starting stream with command: " + ffmpegCmd);
+function startFfmpeg(input, platform, key) {
+    // CPU লোড কমাতে ultrafast এবং বিটরেট কন্ট্রোল করা হয়েছে
+    const ffmpegCmd = `ffmpeg -re -i "${input}" -c:v libx264 -preset ultrafast -b:v 1200k -maxrate 1200k -bufsize 2400k -pix_fmt yuv420p -g 50 -c:a aac -b:a 96k -f flv ${platform}/${key}`;
 
-    const streamProcess = exec(ffmpegCmd);
+    console.log("Running Command: " + ffmpegCmd);
 
-    streamProcess.stderr.on('data', (data) => {
+    const stream = exec(ffmpegCmd);
+
+    stream.stderr.on('data', (data) => {
         console.log(`FFmpeg Log: ${data}`);
     });
 
-    streamProcess.on('exit', (code) => {
-        console.log(`Stream stopped with code ${code}`);
+    stream.on('exit', (code) => {
+        console.log(`FFmpeg process exited with code ${code}`);
     });
-
-    res.send("লাইভ স্ট্রিম শুরু করার অনুরোধ পাঠানো হয়েছে! দয়া করে ইউটিউব স্টুডিও চেক করুন।");
-});
+}
 
 app.listen(3000, () => {
     console.log('Server running on port 3000');
