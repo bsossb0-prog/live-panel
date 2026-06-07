@@ -5,7 +5,6 @@ const path = require('path');
 const fs = require('fs');
 const app = express();
 
-// ফাইল আপলোড করার জন্য সেটিংস
 const upload = multer({ dest: 'uploads/' });
 
 app.use(express.static('.'));
@@ -15,44 +14,43 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     const { type, platform, key } = req.body;
     let source = req.body.source;
 
-    if (!platform || !key) return res.send("প্ল্যাটফর্ম এবং কি প্রয়োজন!");
+    if (!platform || !key) return res.send("Error: Platform and Key are required!");
 
-    // ১. যদি ফাইল আপলোড করা হয়
     if (type === 'file' && req.file) {
         source = req.file.path; 
-        console.log("File uploaded to: " + source);
-    } 
-    // ২. যদি ইউটিউব লিংক হয়
-    else if (type === 'link' && (source && (source.includes('youtube.com') || source.includes('youtu.be')))) {
+    } else if (type === 'link' && (source && (source.includes('youtube.com') || source.includes('youtu.be')))) {
+        // ইউটিউব থেকে সরাসরি লিংক বের করার কমান্ড
         exec(`yt-dlp -f "best[ext=mp4]/best" -g ${source}`, (error, stdout) => {
-            if (error) return res.send("ইউটিউব লিংক সমস্যা!");
+            if (error) {
+                console.error("yt-dlp Error: " + error);
+                return res.send("Error: Could not fetch YouTube video URL.");
+            }
             startFfmpeg(stdout.trim(), platform, key);
         });
-        return res.send("ইউটিউব থেকে লাইভ শুরু হচ্ছে...");
-    } 
-    // ৩. সাধারণ লিংকের জন্য
-    else if (source) {
+        return res.send("Process started! Please check your YouTube Studio in 1-2 minutes.");
+    } else if (source) {
         startFfmpeg(source, platform, key);
     } else {
-        return res.send("সোর্স পাওয়া যায়নি!");
+        return res.send("Error: No video source provided!");
     }
 
-    res.send("লাইভ শুরু হয়েছে! ইউটিউব/ফেসবুক চেক করুন।");
+    res.send("Process started! Please check your YouTube Studio in 1-2 minutes.");
 });
 
 function startFfmpeg(input, platform, key) {
-    const ffmpegCmd = `ffmpeg -re -i "${input}" -c:v libx264 -preset ultrafast -b:v 1200k -maxrate 1200k -bufsize 2400k -pix_fmt yuv420p -g 50 -c:a aac -b:a 96k -f flv ${platform}/${key}`;
+    // একদম লো-বিটরেট এবং আল্ট্রাফাস্ট মোড যাতে Railway সার্ভার কিল না করে
+    const ffmpegCmd = `ffmpeg -re -i "${input}" -c:v libx264 -preset ultrafast -b:v 800k -maxrate 800k -bufsize 1600k -pix_fmt yuv420p -g 50 -c:a aac -b:a 64k -f flv ${platform}/${key}`;
     
-    console.log("Running FFmpeg...");
+    console.log("Executing: " + ffmpegCmd);
     const stream = exec(ffmpegCmd);
 
-    stream.stderr.on('data', (data) => console.log(`FFmpeg: ${data}`));
+    stream.stderr.on('data', (data) => {
+        console.log(`FFmpeg Log: ${data}`); // এই লেখাগুলোই Railway-এর Logs ট্যাবে দেখা যাবে
+    });
+
     stream.on('exit', (code) => {
-        console.log(`Stream ended with code ${code}`);
-        // আপলোড করা ফাইলটি লাইভ শেষ হলে ডিলিট করে দেওয়া হবে যাতে স্টোরেজ খালি থাকে
-        if (input.includes('uploads/')) {
-            fs.unlinkSync(input);
-        }
+        console.log(`FFmpeg exited with code ${code}`);
+        if (input.includes('uploads/')) fs.unlinkSync(input);
     });
 }
 
