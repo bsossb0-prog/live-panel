@@ -26,11 +26,10 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
         return res.send("File upload successful! Stream is starting... check YouTube/Facebook.");
     } 
     
-    // ২. ইউটিউব লিংক হলে (ইউজার-এজেন্ট সহ আপডেট করা অংশ)
+    // ২. ইউটিউব লিংক হলে
     if (type === 'link' && (source && (source.includes('youtube.com') || source.includes('youtu.be')))) {
         console.log("Fetching YouTube URL for: " + source);
         
-        // এখানে ইউজার-এজেন্ট যোগ করা হয়েছে যাতে ইউটিউব ব্লক না করে
         exec(`yt-dlp --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36" -f "best[ext=mp4]/best" -g ${source}`, (error, stdout, stderr) => {
             if (error) {
                 console.error("yt-dlp Error: " + stderr);
@@ -54,7 +53,6 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
 });
 
 function startFfmpeg(input, platform, key) {
-    // একদম লো-বিটরেট এবং আল্ট্রাফাস্ট মোড যাতে Railway সার্ভার কিল না করে
     const ffmpegCmd = `ffmpeg -re -i "${input}" -c:v libx264 -preset ultrafast -b:v 800k -maxrate 800k -bufsize 1600k -pix_fmt yuv420p -g 50 -c:a aac -b:a 64k -f flv ${platform}/${key}`;
     
     console.log("Executing FFmpeg Command: " + ffmpegCmd);
