@@ -6,23 +6,41 @@ const app = express();
 
 const upload = multer({ dest: 'uploads/' });
 let activeStream = null;
-let streamStartTime = null; // লাইভ শুরুর সময় এখানে সেভ হবে
+let streamStartTime = null;
+
+// 🔒 ইউজার লিস্ট (এখানে আপনি আপনার ইউজারনেম এবং পাসওয়ার্ড সেট করুন)
+const USERS = {
+    "nayem": "password123", // উদাহরণ: ইউজারনেম 'nayem', পাসওয়ার্ড 'password123'
+    "boss": "admin786"       // আপনি এভাবে আরও ইউজার যোগ করতে পারেন
+};
+
+const VALID_TOKENS = new Set(); // লগইন করা ইউজারদের টোকেন এখানে থাকবে
 
 app.use(express.static('.'));
 app.use(express.json());
 
-// বর্তমান লাইভ স্ট্যাটাস চেক করার জন্য নতুন এন্ডপয়েন্ট
+// লগইন এন্ডপয়েন্ট
+app.post('/login', (req, res) => {
+    const { user, pass } = req.body;
+    if (USERS[user] && USERS[user] === pass) {
+        const token = Math.random().toString(36).substring(2, 15); // সিম্পল টোকেন তৈরি
+        VALID_TOKENS.add(token);
+        return res.json({ token });
+    }
+    res.status(401).send("Invalid credentials");
+});
+
+// স্ট্যাটাস চেক
 app.get('/status', (req, res) => {
-    res.json({
-        isActive: activeStream !== null,
-        startTime: streamStartTime
-    });
+    res.json({ isActive: activeStream !== null, startTime: streamStartTime });
 });
 
 app.post('/start-stream', upload.single('videoFile'), (req, res) => {
-    const { type, platform, key, loop } = req.body;
+    const { type, platform, key, loop, token } = req.body;
     let source = req.body.source;
 
+    // সিকিউরিটি চেক: টোকেন সঠিক কি না
+    if (!VALID_TOKENS.has(token)) return res.status(403).send("Error: Unauthorized access!");
     if (!platform || !key) return res.status(400).send("Error: Platform and Key are required!");
 
     if (activeStream) {
@@ -53,10 +71,13 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
 });
 
 app.post('/stop-stream', (req, res) => {
+    const { token } = req.body;
+    if (!VALID_TOKENS.has(token)) return res.status(403).send("Error: Unauthorized access!");
+
     if (activeStream) {
         activeStream.kill('SIGKILL');
         activeStream = null;
-        streamStartTime = null; // স্টপ করলে সময় মুছে যাবে
+        streamStartTime = null;
         return res.send("লাইভ স্ট্রিম সফলভাবে বন্ধ করা হয়েছে!");
     }
     res.send("কোনো লাইভ স্ট্রিম চলছে না।");
@@ -66,8 +87,7 @@ function startFfmpeg(input, platform, key, loop) {
     const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
     const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -c:v libx264 -preset ultrafast -b:v 800k -maxrate 800k -bufsize 1600k -pix_fmt yuv420p -g 50 -c:a aac -b:a 64k -f flv ${platform}/${key}`;
     
-    console.log("Executing FFmpeg...");
-    streamStartTime = Date.now(); // লাইভ শুরুর মুহূর্তের সময় সেভ করা হচ্ছে
+    streamStartTime = Date.now();
     activeStream = exec(ffmpegCmd);
 
     activeStream.stderr.on('data', (data) => console.log(`FFmpeg: ${data}`));
