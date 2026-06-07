@@ -6,14 +6,14 @@ const app = express();
 
 const upload = multer({ dest: 'uploads/' });
 
-// স্ট্রীম ডাটাবেস (মেমোরিতে)
+// ৩টি আলাদা চ্যানেলের জন্য ডাটাবেস
 let streams = {
     "1": { isActive: false, process: null, startTime: null },
     "2": { isActive: false, process: null, startTime: null },
     "3": { isActive: false, process: null, startTime: null }
 };
 
-const USERS = { "nayem": "password123" }; // ইউজার সেট করুন
+const USERS = { "nayem": "password123" }; 
 const VALID_TOKENS = new Set();
 
 app.use(express.static('.'));
@@ -34,29 +34,22 @@ app.get('/status', (req, res) => {
 });
 
 app.post('/start-stream', upload.single('videoFile'), (req, res) => {
-    const { channelId, type, platform, key, loop, duration, token } = req.body;
-    let source = req.body.source;
+    const { channelId, platform, key, loop, token } = req.body;
 
     if (!VALID_TOKENS.has(token)) return res.status(403).send("Unauthorized!");
-    if (!platform || !key) return res.status(400).send("Missing Key/Platform!");
+    if (!platform || !key) return res.status(400).send("Missing Key!");
 
     const id = channelId;
     if (streams[id].isActive) {
         streams[id].process.kill('SIGKILL');
     }
 
-    if (type === 'file' && req.file) {
-        source = req.file.path;
+    if (req.file) {
+        const source = req.file.path;
         startFfmpeg(id, source, platform, key, loop);
-        return res.send("File Uploaded! Starting...");
-    } else if (type === 'link' && source) {
-        exec(`yt-dlp --user-agent "Mozilla/5.0" -f "best[ext=mp4]/best" -g ${source}`, (error, stdout) => {
-            if (error) return;
-            startFfmpeg(id, stdout.trim(), platform, key, loop);
-        });
-        return res.send("YouTube link processed!");
+        return res.send("Stream started successfully for Channel " + id);
     }
-    res.status(400).send("Invalid Source!");
+    res.status(400).send("No video file uploaded!");
 });
 
 app.post('/stop-stream', (req, res) => {
@@ -82,15 +75,12 @@ function startFfmpeg(id, input, platform, key, loop) {
     streams[id].isActive = true;
     streams[id].process = exec(ffmpegCmd);
 
-    // সময় সেট করা থাকলে অটোমেটিক বন্ধ হবে
-    // (Client-side duration’s value used here)
-    // Note: Duration handle logic integrated into the process.
-    
     streams[id].process.on('exit', () => {
         streams[id].isActive = false;
         streams[id].process = null;
         streams[id].startTime = null;
-        if (input.includes('uploads/')) try { fs.unlinkSync(input); } catch(e){}
+        // আমরা ফাইলটি ডিলিট করছি না কারণ অন্য চ্যানেল সেটি ব্যবহার করতে পারে। 
+        // Railway-তে মাঝে মাঝে অটোমেটিক ক্লিনিং হয়।
     });
 }
 
