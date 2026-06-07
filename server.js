@@ -1,11 +1,9 @@
 const express = require('express');
-const { exec, spawn } = require('child_process');
+const { exec } = require('child_process');
 const app = express();
 
 app.use(express.json());
 app.use(express.static('.'));
-
-let streamProcess = null;
 
 app.post('/start-stream', (req, res) => {
     const { type, source, platform, key } = req.body;
@@ -14,39 +12,29 @@ app.post('/start-stream', (req, res) => {
         return res.send("সবগুলো ঘর পূরণ করুন!");
     }
 
-    if (streamProcess) {
-        return res.send("একটি স্ট্রিম অলরেডি চলছে!");
-    }
-
     let inputSource = source;
+
+    // ইউটিউব লিংক হলে yt-dlp দিয়ে সরাসরি সোর্স বের করা
     if (type === 'link' && (source.includes('youtube.com') || source.includes('youtu.be'))) {
-        inputSource = `$(yt-dlp -g ${source})`;
+        inputSource = `$(yt-dlp -f "best[ext=mp4]/best" -g ${source})`;
     }
 
-    // FFmpeg কমান্ডটি execute করার জন্য spawn ব্যবহার করা হয়েছে যাতে প্রসেসটি ট্র্যাক করা যায়
-    const ffmpegCmd = `ffmpeg -re -i ${inputSource} -c:v libx264 -preset veryfast -maxrate 3000k -bufsize 6000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
-    
-    streamProcess = spawn('/bin/bash', ['-c', ffmpegCmd]);
+    // CPU চাপ কমাতে -preset ultrafast এবং বিটরেট কমিয়ে দেওয়া হয়েছে
+    const ffmpegCmd = `ffmpeg -re -i ${inputSource} -c:v libx264 -preset ultrafast -b:v 1500k -maxrate 1500k -bufsize 3000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 96k -f flv ${platform}/${key}`;
+
+    console.log("Starting stream with command: " + ffmpegCmd);
+
+    const streamProcess = exec(ffmpegCmd);
 
     streamProcess.stderr.on('data', (data) => {
         console.log(`FFmpeg Log: ${data}`);
     });
 
-    streamProcess.on('close', (code) => {
-        console.log(`Stream closed with code ${code}`);
-        streamProcess = null;
+    streamProcess.on('exit', (code) => {
+        console.log(`Stream stopped with code ${code}`);
     });
 
-    res.send("সার্ভার কমান্ডটি গ্রহণ করেছে। দয়া করে স্ট্যাটাস চেক করুন।");
-});
-
-// লাইভ স্ট্যাটাস চেক করার জন্য নতুন রুট
-app.get('/status', (req, res) => {
-    if (streamProcess) {
-        res.json({ status: 'online' });
-    } else {
-        res.json({ status: 'offline' });
-    }
+    res.send("লাইভ স্ট্রিম শুরু করার অনুরোধ পাঠানো হয়েছে! দয়া করে ইউটিউব স্টুডিও চেক করুন।");
 });
 
 app.listen(3000, () => {
