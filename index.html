@@ -3,37 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Multi-Stream Master Panel</title>
+    <title>Pro Live Panel</title>
     <style>
-        body { background-color: #050510; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; overflow-x: hidden; }
-        .main-container { width: 95%; max-width: 500px; margin: 20px 0; }
-        .panel { background-color: #111125; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid #1a1a3a; margin-bottom: 20px; position: relative; }
-        h2 { text-align: center; color: #00d2ff; font-size: 22px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
-        .master-upload { background: linear-gradient(145deg, #1a1a3a, #0d0d20); padding: 20px; border-radius: 15px; border: 2px solid #00d2ff; margin-bottom: 25px; text-align: center; box-shadow: 0 0 15px rgba(0, 210, 255, 0.2); }
-        .master-upload h3 { color: #00d2ff; font-size: 16px; margin-bottom: 10px; text-transform: uppercase; }
-        .progress-container { display: none; margin: 15px 0; text-align: center; }
-        .progress-bar-bg { background: #050510; border-radius: 10px; height: 12px; width: 100%; border: 1px solid #00d2ff; overflow: hidden; }
-        .progress-bar-fill { background: linear-gradient(90deg, #00d2ff, #00a2ff); height: 100%; width: 0%; transition: width 0.2s; }
-        #progressPercent { font-size: 13px; color: #00d2ff; margin-top: 5px; display: block; font-weight: bold; }
-        .channel-box { background: #1a1a3a; padding: 15px; border-radius: 15px; border: 1px solid #2a2a4a; margin-bottom: 20px; }
-        .channel-title { color: #00d2ff; font-weight: bold; margin-bottom: 10px; display: block; font-size: 16px; }
-        .timer-display { text-align: center; margin-bottom: 15px; padding: 10px; border: 2px dashed #00d2ff; border-radius: 10px; background: rgba(0, 210, 255, 0.05); }
-        .timer-val { color: #00d2ff; font-size: 24px; font-weight: bold; font-family: 'Courier New', Courier, monospace; text-shadow: 0 0 10px #00d2ff; }
-        .input-group { margin-bottom: 10px; }
-        label { display: block; margin-bottom: 3px; font-size: 12px; color: #aaa; }
-        input, select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #2a2a4a; background: #0d0d20; color: white; font-size: 13px; box-sizing: border-box; outline: none; }
-        .row { display: flex; gap: 10px; }
-        .row div { flex: 1; }
-        .hidden { display: none !important; }
-        .start-btn { width: 100%; padding: 12px; background-color: #00d2ff; border: none; border-radius: 8px; color: #050510; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; transition: 0.3s; }
-        .stop-btn { width: 100%; padding: 12px; background-color: #ff4b2b; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; transition: 0.3s; }
-        .upload-btn { width: 100%; padding: 12px; background: #00d2ff; border: none; border-radius: 8px; color: #050510; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
-        .logout-btn { position: absolute; top: 10px; right: 10px; background: none; border: 1px solid #ff4b2b; color: #ff4b2b; padding: 3px 8px; border-radius: 5px; cursor: pointer; font-size: 11px; }
+        body { background-color: #050510; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; overflow: hidden; }
         #loginPage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050510; display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .login-box { background: #111125; padding: 40px; border-radius: 20px; border: 1px solid #1a1a3a; width: 300px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        .login-box h2 { color: #00d2ff; margin-bottom: 20px; }
+        .login-box h2 { color: #00d2ff; margin-bottom: 20px; text-transform: uppercase; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #2a2a4a; background: #1a1a3a; color: white; box-sizing: border-box; }
         .login-box button { width: 100%; padding: 12px; background: #00d2ff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        #mainPanel { display: none; width: 90%; max-width: 450px; }
+        .panel { background-color: #111125; padding: 25px; border-radius: 20px; border: 1px solid #1a1a3a; margin-bottom: 20px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        h2 { text-align: center; color: #00d2ff; font-size: 22px; margin-bottom: 20px; text-transform: uppercase; }
+        .timer-container { text-align: center; margin-bottom: 20px; padding: 10px; border: 2px dashed #00d2ff; border-radius: 15px; background: rgba(0, 210, 255, 0.05); }
+        #statusText { color: #aaa; font-size: 14px; display: block; }
+        #timer { color: #00d2ff; font-size: 30px; font-weight: bold; font-family: monospace; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 12px; color: #aaa; }
+        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #2a2a4a; background: #1a1a3a; color: white; font-size: 14px; box-sizing: border-box; }
+        .start-btn { width: 100%; padding: 15px; background-color: #00d2ff; border: none; border-radius: 8px; color: #050510; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .stop-btn { width: 100%; padding: 15px; background-color: #ff4b2b; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .logout-btn { position: absolute; top: 10px; right: 10px; background: none; border: 1px solid #ff4b2b; color: #ff4b2b; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 11px; }
     </style>
 </head>
 <body>
@@ -47,106 +36,39 @@
     </div>
 </div>
 
-<div id="mainPanel" class="main-container" style="display:none;">
+<div id="mainPanel">
     <button class="logout-btn" onclick="logout()">Logout</button>
-    <h2>Multi-Stream Master</h2>
-    
-    <div class="master-upload">
-        <h3>📁 Master Video Source</h3>
-        <input type="file" id="masterFile" accept="video/*">
-        <div id="progContainer" class="progress-container">
-            <div class="progress-bar-bg">
-                <div id="progFill" class="progress-bar-fill"></div>
-            </div>
-            <span id="progressPercent">Uploading... 0%</span>
+    <div class="panel">
+        <h2>LIVE PANEL</h2>
+        <div class="timer-container">
+            <span id="statusText">Status: Ready to Stream</span>
+            <div id="timer">00:00:00</div>
         </div>
-        <button class="upload-btn" id="upBtn" onclick="uploadMaster()">Upload Master Video</button>
-        <p id="uploadStatus" style="font-size: 11px; color: #aaa; margin-top: 8px;">No video uploaded yet</p>
-    </div>
-
-    <!-- Channel 1 -->
-    <div class="panel" id="panel-1">
-        <span class="channel-title">Channel 1</span>
-        <div class="timer-display" id="timer-box-1">
-            <span id="status-1">Status: Ready</span><br>
-            <span class="timer-val" id="timer-1">00:00:00</span>
+        <div class="input-group">
+            <label>Video Source (Link or Path)</label>
+            <input type="text" id="videoSource" placeholder="https://youtube.com/...">
         </div>
-        <div class="inputs-area" id="inputs-1">
-            <div class="row">
-                <div class="input-group">
-                    <label>Stream Key</label>
-                    <input type="text" id="key-1" placeholder="Enter Key">
-                </div>
-                <div class="input-group">
-                    <label>Duration (Mins)</label>
-                    <input type="number" id="time-1" placeholder="0" value="0">
-                </div>
-            </div>
-            <div class="input-group">
-                <label><input type="checkbox" id="loop-1"> 🔄 Loop Video (24/7)</label>
-            </div>
-            <button class="start-btn" id="btn-1" onclick="startStream(1)">Start Live</button>
+        <div class="input-group">
+            <label>Stream Key</label>
+            <input type="text" id="streamKey" placeholder="Enter stream key">
         </div>
-    </div>
-
-    <!-- Channel 2 -->
-    <div class="panel" id="panel-2">
-        <span class="channel-title">Channel 2</span>
-        <div class="timer-display" id="timer-box-2">
-            <span id="status-2">Status: Ready</span><br>
-            <span class="timer-val" id="timer-2">00:00:00</span>
+        <div class="input-group">
+            <label><input type="checkbox" id="loopStream"> 🔄 Loop Video (24/7)</label>
         </div>
-        <div class="inputs-area" id="inputs-2">
-            <div class="row">
-                <div class="input-group">
-                    <label>Stream Key</label>
-                    <input type="text" id="key-2" placeholder="Enter Key">
-                </div>
-                <div class="input-group">
-                    <label>Duration (Mins)</label>
-                    <input type="number" id="time-2" placeholder="0" value="0">
-                </div>
-            </div>
-            <div class="input-group">
-                <label><input type="checkbox" id="loop-2"> 🔄 Loop Video (24/7)</label>
-            </div>
-            <button class="start-btn" id="btn-2" onclick="startStream(2)">Start Live</button>
-        </div>
-    </div>
-
-    <!-- Channel 3 -->
-    <div class="panel" id="panel-3">
-        <span class="channel-title">Channel 3</span>
-        <div class="timer-display" id="timer-box-3">
-            <span id="status-3">Status: Ready</span><br>
-            <span class="timer-val" id="timer-3">00:00:00</span>
-        </div>
-        <div class="inputs-area" id="inputs-3">
-            <div class="row">
-                <div class="input-group">
-                    <label>Stream Key</label>
-                    <input type="text" id="key-3" placeholder="Enter Key">
-                </div>
-                <div class="input-group">
-                    <label>Duration (Mins)</label>
-                    <input type="number" id="time-3" placeholder="0" value="0">
-                </div>
-            </div>
-            <div class="input-group">
-                <label><input type="checkbox" id="loop-3"> 🔄 Loop Video (24/7)</label>
-            </div>
-            <button class="start-btn" id="btn-3" onclick="startStream(3)">Start Live</button>
+        <div id="buttonArea">
+            <button id="startBtn" class="start-btn" onclick="startStream()">Start Live Stream</button>
         </div>
     </div>
 </div>
 
 <script>
     let sessionToken = localStorage.getItem('live_token');
-    let timers = {};
+    let timerInterval;
+    let startTime;
 
     window.onload = async () => {
         if (sessionToken) showPanel();
-        syncStatuses();
+        checkStatus();
     };
 
     async function login() {
@@ -162,7 +84,7 @@
             localStorage.setItem('live_token', data.token);
             sessionToken = data.token;
             showPanel();
-        } else alert("Invalid Login!");
+        } else alert("ভুল ইউজারনেম বা পাসওয়ার্ড!");
     }
 
     function showPanel() {
@@ -172,112 +94,59 @@
 
     function logout() { localStorage.removeItem('live_token'); location.reload(); }
 
-    async function syncStatuses() {
+    async function checkStatus() {
         try {
             const res = await fetch('/status');
             const data = await res.json();
-            for (let id in data.streams) {
-                const s = data.streams[id];
-                if (s.isActive) {
-                    document.getElementById(`status-${id}`).innerText = "Status: LIVE";
-                    document.getElementById(`inputs-${id}`).classList.add('hidden');
-                    document.getElementById(`btn-${id}`).innerText = "Stop Live";
-                    document.getElementById(`btn-${id}`).className = "stop-btn";
-                    document.getElementById(`btn-${id}`).onclick = () => stopStream(id);
-                    startTimer(id, s.startTime);
-                } else {
-                    document.getElementById(`status-${id}`).innerText = "Status: Ready";
-                    document.getElementById(`inputs-${id}`).classList.remove('hidden');
-                    document.getElementById(`btn-${id}`).innerText = "Start Live";
-                    document.getElementById(`btn-${id}`).className = "start-btn";
-                    document.getElementById(`btn-${id}`).onclick = () => startStream(id);
-                }
+            if (data.isActive) {
+                startTime = data.startTime;
+                document.getElementById('statusText').innerText = "Status: LIVE";
+                document.getElementById('buttonArea').innerHTML = `<button class="stop-btn" onclick="stopStream()">Stop Live Stream</button>`;
+                startTimer();
             }
         } catch (e) {}
     }
 
-    function startTimer(id, startTime) {
-        if (timers[id]) clearInterval(timers[id]);
-        timers[id] = setInterval(() => {
+    function startTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
             const diff = Math.floor((Date.now() - startTime) / 1000);
             let h = Math.floor(diff / 3600);
             let m = Math.floor((diff % 3600) / 60);
             let s = diff % 60;
-            document.getElementById(`timer-${id}`).innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            document.getElementById('timer').innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }, 1000);
     }
 
-    async function uploadMaster() {
-        const file = document.getElementById('masterFile').files[0];
-        if (!file) { alert("প্রথমে একটি ভিডিও ফাইল সিলেক্ট করুন!"); return; }
+    async function startStream() {
+        const source = document.getElementById('videoSource').value;
+        const key = document.getElementById('streamKey').value;
+        const loop = document.getElementById('loopStream').checked;
 
-        const formData = new FormData();
-        formData.append('token', sessionToken); 
-        formData.append('videoFile', file);
+        if (!key || !source) { alert("সোর্স এবং কি বসান!"); return; }
 
-        const btn = document.getElementById('upBtn');
-        const progContainer = document.getElementById('progContainer');
-        const progFill = document.getElementById('progFill');
-        const progPercent = document.getElementById('progressPercent');
-        const statusText = document.getElementById('uploadStatus');
+        const res = await fetch('/start-stream', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ source, key, platform: 'rtmp://a.rtmp.youtube.com/live2', loop, token: sessionToken })
+        });
 
-        btn.disabled = true;
-        progContainer.style.display = 'block';
-
-        const xhr = new XMLHttpRequest();
-        xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-                const percent = Math.round((e.loaded / e.total) * 100);
-                progFill.style.width = percent + '%';
-                progPercent.innerText = `Uploading... ${percent}%`;
-            }
-        };
-
-        xhr.onload = () => {
-            if (xhr.status === 200) {
-                alert("মাস্টার ভিডিও সফলভাবে আপলোড হয়েছে!");
-                statusText.innerText = "✅ Master Video Ready!";
-                statusText.style.color = "#00ff00";
-            } else {
-                alert("Error: " + xhr.responseText);
-            }
-            btn.disabled = false;
-            setTimeout(() => { progContainer.style.display = 'none'; }, 3000);
-        };
-
-        xhr.open('POST', '/upload-master', true);
-        xhr.send(formData);
-    }
-
-    async function startStream(id) {
-        const formData = new FormData();
-        formData.append('channelId', id);
-        formData.append('key', document.getElementById(`key-${id}`).value);
-        formData.append('platform', 'rtmp://a.rtmp.youtube.com/live2');
-        formData.append('loop', document.getElementById(`loop-${id}`).checked);
-        formData.append('duration', document.getElementById(`time-${id}`).value);
-        formData.append('token', sessionToken);
-
-        if (!document.getElementById(`key-${id}`).value) { alert("স্ট্রিম কি বসান!"); return; }
-
-        const res = await fetch('/start-stream', { method: 'POST', body: formData });
         if (res.ok) {
-            alert("Channel " + id + " Started!");
-            syncStatuses();
+            alert("লাইভ শুরু হয়েছে!");
+            checkStatus();
         } else {
-            const err = await res.text();
-            alert("Error: " + err);
+            alert("Error: " + await res.text());
         }
     }
 
-    async function stopStream(id) {
-        await fetch('/stop-stream', { 
-            method: 'POST', 
-            headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify({ channelId: id, token: sessionToken }) 
+    async function stopStream() {
+        await fetch('/stop-stream', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ token: sessionToken })
         });
-        alert("Channel " + id + " Stopped!");
-        syncStatuses();
+        alert("লাইভ বন্ধ হয়েছে!");
+        location.reload();
     }
 </script>
 </body>
