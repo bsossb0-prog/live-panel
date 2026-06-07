@@ -1,6 +1,5 @@
 const express = require('express');
-const { exec } = { exec: require('child_process').exec }; // Fix for some environments
-const { exec: execCmd } = require('child_process');
+const { exec } = require('child_process');
 const multer = require('multer');
 const fs = require('fs');
 const app = express();
@@ -14,9 +13,8 @@ let activeStreams = {
 
 let masterVideoPath = null;
 
-// 🔒 ইউজার লিস্ট
+// 🔒 ইউজার লিস্ট (আপনার ইউজারনেম এবং পাসওয়ার্ড এখানে সেট করুন)
 const USERS = { "nayem": "password123" }; 
-// এই সিক্রেট কি টি সার্ভার রিস্টার্ট হলেও বদলাবে না
 const GLOBAL_SECRET_TOKEN = "MASTER_BOSS_SECRET_TOKEN_99"; 
 
 app.use(express.static('.'));
@@ -25,7 +23,6 @@ app.use(express.json());
 app.post('/login', (req, res) => {
     const { user, pass } = req.body;
     if (USERS[user] && USERS[user] === pass) {
-        // এখন আমরা একটি স্থায়ী সিক্রেট টোকেন পাঠাচ্ছি
         return res.json({ token: GLOBAL_SECRET_TOKEN });
     }
     res.status(401).send("Invalid Login");
@@ -86,7 +83,7 @@ function startFfmpeg(id, input, platform, key, loop) {
     
     activeStreams[id].startTime = Date.now();
     activeStreams[id].isActive = true;
-    activeStreams[id].process = execCmd(ffmpegCmd);
+    activeStreams[id].process = exec(ffmpegCmd);
 
     activeStreams[id].process.on('exit', () => {
         activeStreams[id].isActive = false;
