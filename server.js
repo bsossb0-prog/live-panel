@@ -4,12 +4,7 @@ const multer = require('multer');
 const fs = require('fs');
 const app = express();
 
-// ৯০০ এমবি বা তার বেশি ফাইল আপলোডের জন্য লিমিট বাড়ানো হয়েছে
-const upload = multer({ 
-    dest: 'uploads/',
-    limits: { fileSize: 1000 * 1024 * 1024 } // ১ জিবি পর্যন্ত লিমিট
-});
-
+const upload = multer({ dest: 'uploads/' });
 let activeStream = null;
 let streamStartTime = null;
 
@@ -20,18 +15,11 @@ app.use(express.json());
 
 app.post('/login', (req, res) => {
     const { user, pass } = req.body;
-    if (USERS[user] && USERS[user] === pass) {
+    if (pass === ADMIN_PASSWORD) {
         return res.json({ token: "auth_success" });
     }
-    res.status(401).send("ভুল ইউজারনেম অথবা পাসওয়ার্ড!");
+    res.status(401).send("ভুল পাসওয়ার্ড!");
 });
-
-// ইউজার লিস্ট (আগের মতোই)
-const USERS = {
-    "sakib": "sakib12",
-    "rana12": "rana12hello",
-    "admin": "password123"
-};
 
 app.get('/status', (req, res) => {
     res.json({ isActive: activeStream !== null, startTime: streamStartTime });
@@ -52,7 +40,7 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     if (type === 'file' && req.file) {
         source = req.file.path; 
         startFfmpeg(source, platform, key, loop);
-        return res.send("Big file uploaded! Starting stream... Please wait 2-3 minutes.");
+        return res.send("File uploaded! Stream starting in 1080p...");
     } 
     
     if (type === 'link' && (source && (source.includes('youtube.com') || source.includes('youtu.be')))) {
@@ -60,12 +48,12 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
             if (error) return;
             startFfmpeg(stdout.trim(), platform, key, loop);
         });
-        return res.send("YouTube link processed! Stream starting...");
+        return res.send("YouTube link processed! Stream starting in 1080p...");
     } 
     
     if (source) {
         startFfmpeg(source, platform, key, loop);
-        return res.send("Direct link processed! Stream starting...");
+        return res.send("Direct link processed! Stream starting in 1080p...");
     }
 
     res.status(400).send("Invalid source!");
@@ -86,12 +74,12 @@ app.post('/stop-stream', (req, res) => {
 function startFfmpeg(input, platform, key, loop) {
     const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
     
-    // 🚀 মেমোরি সেভিং সেটিংস (Max Stability for Big Files)
-    // -threads 1 : সার্ভার যেন ক্র্যাশ না করে তাই মাত্র ১টি থ্রেড ব্যবহার করা হয়েছে
-    // -b:v 1000k : মাঝারি কোয়ালিটি যাতে র‍্যাম কম লাগে
-    const ffmpegCmd = `ffmpeg -re -threads 1 ${loopCmd}-i "${input}" -vf "scale=720:-2" -c:v libx264 -preset ultrafast -b:v 1000k -maxrate 1000k -bufsize 2000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
+    // 🌟 হাই-কোয়ালিটি সেটিংস (1080p Upscaling)
+    // scale=1920:1080 এর মাধ্যমে ভিডিওটিকে Full HD করা হয়েছে
+    // বিটরেট বাড়িয়ে 2500k করা হয়েছে যাতে ভিডিওর ঘোলাটে ভাব কমে যায়
+    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2" -c:v libx264 -preset ultrafast -b:v 2500k -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
     
-    console.log("Starting Stable Big-File Stream...");
+    console.log("Starting High-Definition 1080p Stream...");
     streamStartTime = Date.now();
     activeStream = exec(ffmpegCmd);
 
