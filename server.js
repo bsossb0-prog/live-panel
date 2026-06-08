@@ -26,7 +26,7 @@ app.get('/status', (req, res) => {
 });
 
 app.post('/start-stream', upload.single('videoFile'), (req, res) => {
-    const { type, platform, key, loop, token } = req.body;
+    const { type, platform, key, loop, token, mode } = req.body;
     let source = req.body.source;
 
     if (token !== "auth_success") return res.status(403).send("Unauthorized!");
@@ -39,21 +39,21 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
 
     if (type === 'file' && req.file) {
         source = req.file.path; 
-        startFfmpeg(source, platform, key, loop);
-        return res.send("File uploaded! Stream starting in 1080p...");
+        startFfmpeg(source, platform, key, loop, mode);
+        return res.send("File uploaded! Stream starting...");
     } 
     
     if (type === 'link' && (source && (source.includes('youtube.com') || source.includes('youtu.be')))) {
         exec(`yt-dlp --user-agent "Mozilla/5.0" -f "best[ext=mp4]/best" -g ${source}`, (error, stdout) => {
             if (error) return;
-            startFfmpeg(stdout.trim(), platform, key, loop);
+            startFfmpeg(stdout.trim(), platform, key, loop, mode);
         });
-        return res.send("YouTube link processed! Stream starting in 1080p...");
+        return res.send("YouTube link processed! Stream starting...");
     } 
     
     if (source) {
-        startFfmpeg(source, platform, key, loop);
-        return res.send("Direct link processed! Stream starting in 1080p...");
+        startFfmpeg(source, platform, key, loop, mode);
+        return res.send("Direct link processed! Stream starting...");
     }
 
     res.status(400).send("Invalid source!");
@@ -71,15 +71,23 @@ app.post('/stop-stream', (req, res) => {
     res.send("No stream running");
 });
 
-function startFfmpeg(input, platform, key, loop) {
+function startFfmpeg(input, platform, key, loop, mode) {
     const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
     
-    // 🌟 হাই-কোয়ালিটি সেটিংস (1080p Upscaling)
-    // scale=1920:1080 এর মাধ্যমে ভিডিওটিকে Full HD করা হয়েছে
-    // বিটরেট বাড়িয়ে 2500k করা হয়েছে যাতে ভিডিওর ঘোলাটে ভাব কমে যায়
-    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2" -c:v libx264 -preset ultrafast -b:v 2500k -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
+    // 🌟 মোড অনুযায়ী রেজোলিউশন সেট করা
+    let scaleFilter;
+    if (mode === 'shorts') {
+        // শর্টস মোড: ১০৮০x১৯২০ (Vertical) - ভিডিওটিকে ক্রপ এবং স্কেল করবে যাতে চেপটা না হয়
+        scaleFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920";
+        console.log("Starting Shorts Mode (Vertical 1080x1920)...");
+    } else {
+        // স্ট্যান্ডার্ড মোড: ১৯২০x১০৮০ (Horizontal)
+        scaleFilter = "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2";
+        console.log("Starting Standard Mode (Horizontal 1920x1080)...");
+    }
     
-    console.log("Starting High-Definition 1080p Stream...");
+    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter}" -c:v libx264 -preset ultrafast -b:v 2500k -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
+    
     streamStartTime = Date.now();
     activeStream = exec(ffmpegCmd);
 
