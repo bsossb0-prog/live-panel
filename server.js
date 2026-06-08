@@ -4,7 +4,12 @@ const multer = require('multer');
 const fs = require('fs');
 const app = express();
 
-const upload = multer({ dest: 'uploads/' });
+// ৯০০ এমবি বা তার বেশি ফাইল আপলোডের জন্য লিমিট বাড়ানো হয়েছে
+const upload = multer({ 
+    dest: 'uploads/',
+    limits: { fileSize: 1000 * 1024 * 1024 } // ১ জিবি পর্যন্ত লিমিট
+});
+
 let activeStream = null;
 let streamStartTime = null;
 
@@ -15,11 +20,18 @@ app.use(express.json());
 
 app.post('/login', (req, res) => {
     const { user, pass } = req.body;
-    if (pass === ADMIN_PASSWORD) {
+    if (USERS[user] && USERS[user] === pass) {
         return res.json({ token: "auth_success" });
     }
-    res.status(401).send("ভুল পাসওয়ার্ড!");
+    res.status(401).send("ভুল ইউজারনেম অথবা পাসওয়ার্ড!");
 });
+
+// ইউজার লিস্ট (আগের মতোই)
+const USERS = {
+    "sakib": "sakib12",
+    "rana12": "rana12hello",
+    "admin": "password123"
+};
 
 app.get('/status', (req, res) => {
     res.json({ isActive: activeStream !== null, startTime: streamStartTime });
@@ -40,7 +52,7 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     if (type === 'file' && req.file) {
         source = req.file.path; 
         startFfmpeg(source, platform, key, loop);
-        return res.send("File uploaded! Stream starting...");
+        return res.send("Big file uploaded! Starting stream... Please wait 2-3 minutes.");
     } 
     
     if (type === 'link' && (source && (source.includes('youtube.com') || source.includes('youtu.be')))) {
@@ -74,11 +86,12 @@ app.post('/stop-stream', (req, res) => {
 function startFfmpeg(input, platform, key, loop) {
     const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
     
-    // স্মার্ট স্কেলিং: এটি ভিডিওর অরিজিনাল রেশিও চেক করে সেট করবে
-    // যাতে ভিডিও চেপটা না হয়ে ন্যাচারাল দেখায় এবং কোয়ালিটি পরিষ্কার থাকে (1500k bitrate)
-    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "scale='if(gt(iw,ih),-2,720)':'if(gt(iw,ih),720,-2)'" -c:v libx264 -preset ultrafast -b:v 1500k -maxrate 1500k -bufsize 3000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
+    // 🚀 মেমোরি সেভিং সেটিংস (Max Stability for Big Files)
+    // -threads 1 : সার্ভার যেন ক্র্যাশ না করে তাই মাত্র ১টি থ্রেড ব্যবহার করা হয়েছে
+    // -b:v 1000k : মাঝারি কোয়ালিটি যাতে র‍্যাম কম লাগে
+    const ffmpegCmd = `ffmpeg -re -threads 1 ${loopCmd}-i "${input}" -vf "scale=720:-2" -c:v libx264 -preset ultrafast -b:v 1000k -maxrate 1000k -bufsize 2000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
     
-    console.log("Starting Aspect-Ratio Fixed HD Stream...");
+    console.log("Starting Stable Big-File Stream...");
     streamStartTime = Date.now();
     activeStream = exec(ffmpegCmd);
 
