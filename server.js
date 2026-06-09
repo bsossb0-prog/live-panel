@@ -4,12 +4,7 @@ const multer = require('multer');
 const fs = require('fs');
 const app = express();
 
-// ১ জিবি পর্যন্ত আপলোড সাপোর্ট করার জন্য লিমিট সেট করা হয়েছে
-const upload = multer({ 
-    dest: 'uploads/', 
-    limits: { fileSize: 1024 * 1024 * 1024 } // 1GB limit
-});
-
+const upload = multer({ dest: 'uploads/' });
 let activeStreams = {}; 
 let streamStartTimes = {};
 
@@ -39,41 +34,26 @@ app.get('/status', (req, res) => {
 });
 
 app.post('/start-stream', upload.single('videoFile'), (req, res) => {
-    const { type, platform, key, loop, token, mode, duration } = req.body;
-    let source = req.body.source;
-
+    const { platform, key, loop, token, mode, duration } = req.body;
+    
     if (!USERS[token]) return res.status(403).send("Unauthorized!");
     if (!platform || !key) return res.status(400).send("Missing details!");
+
+    if (!req.file) return res.status(400).send("Please upload a video file!");
 
     if (activeStreams[token]) {
         activeStreams[token].kill('SIGKILL');
     }
 
-    if (type === 'file' && req.file) {
-        source = req.file.path; 
-        startFfmpeg(token, source, platform, key, loop, mode, duration);
-        return res.send("File uploaded! Stream starting...");
-    } 
-    
-    if (type === 'link' && (source && (source.includes('youtube.com') || source.includes('youtu.be')))) {
-        exec(`yt-dlp --user-agent "Mozilla/5.0" -f "best[ext=mp4]/best" -g ${source}`, (error, stdout) => {
-            if (error) return;
-            startFfmpeg(token, stdout.trim(), platform, key, loop, mode, duration);
-        });
-        return res.send("YouTube link processed! Stream starting...");
-    } 
-    
-    if (source) {
-        startFfmpeg(token, source, platform, key, loop, mode, duration);
-        return res.send("Direct link processed! Stream starting...");
-    }
-
-    res.status(400).send("Invalid source!");
+    const source = req.file.path; 
+    startFfmpeg(token, source, platform, key, loop, mode, duration);
+    return res.send("File uploaded! Starting Stable HD Stream...");
 });
 
 app.post('/stop-stream', (req, res) => {
     const { token } = req.body;
     if (!USERS[token]) return res.status(403).send("Unauthorized!");
+    
     if (activeStreams[token]) {
         activeStreams[token].kill('SIGKILL');
         activeStreams[token] = null;
@@ -85,31 +65,25 @@ app.post('/stop-stream', (req, res) => {
 
 function startFfmpeg(token, input, platform, key, loop, mode, duration) {
     const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
+    
+    // 🌟 স্থিতিশীল এইচডি সেটিংস (720p)
+    // রেজোলিউশন ৭২০পি রাখা হয়েছে যাতে সার্ভার ক্র্যাশ না করে কিন্তু ভিডিও পরিষ্কার থাকে
     let scaleFilter = mode === 'shorts' ? 
-        "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920" : 
-        "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2";
+        "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280" : 
+        "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2";
     
-    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter}" -c:v libx264 -preset ultrafast -b:v 1500k -maxrate 1500k -bufsize 3000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
+    // বিটরেট ১০০০k - এটি ফ্রি সার্ভারের জন্য সবচেয়ে নিরাপদ এবং ক্লিয়ার সেটিংস
+    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter}" -c:v libx264 -preset ultrafast -b:v 1000k -maxrate 1000k -bufsize 2000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 96k -f flv ${platform}/${key}`;
     
+    console.log(`Starting stable stream for ${token}...`);
     streamStartTimes[token] = Date.now();
+    
     const stream = exec(ffmpegCmd);
     activeStreams[token] = stream;
 
-    // ⏱️ সময় সেট করার লজিক: যদি duration ০ না হয়, তবে নির্দিষ্ট সময় পর বন্ধ হয়ে যাবে
-    if (duration && duration !== '0') {
-        const durationMs = parseInt(duration) * 60 * 1000;
-        setTimeout(() => {
-            if (activeStreams[token]) {
-                console.log(`Duration reached for ${token}. Stopping stream...`);
-                activeStreams[token].kill('SIGKILL');
-                activeStreams[token] = null;
-                streamStartTimes[token] = null;
-            }
-        }, durationMs);
-    }
-
     stream.stderr.on('data', (data) => console.log(`FFmpeg [${token}]: ${data}`));
     stream.on('exit', (code) => {
+        console.log(`Stream for ${token} exited with code ${code}`);
         if (input.includes('uploads/')) {
             try { fs.unlinkSync(input); } catch (e) {}
         }
@@ -119,4 +93,4 @@ function startFfmpeg(token, input, platform, key, loop, mode, duration) {
 }
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Master Panel running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Stable-Stream Server running on port ${PORT}`));
