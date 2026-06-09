@@ -3,10 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Live Panel</title>
+    <title>Pro High-Quality Live Panel</title>
     <style>
         body { background-color: #050510; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .panel { background-color: #111125; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); width: 100%; max-width: 500px; border: 1px solid #1a1a3a; position: relative; }
+        #loginPage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050510; display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .login-box { background: #111125; padding: 40px; border-radius: 20px; border: 1px solid #1a1a3a; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .login-box h2 { color: #00d2ff; margin-bottom: 20px; text-transform: uppercase; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #2a2a4a; background: #1a1a3a; color: white; box-sizing: border-box; outline: none; }
+        .login-box button { width: 100%; padding: 12px; background: #00d2ff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        #mainPanel { display: none; width: 90%; max-width: 500px; }
+        .panel { background-color: #111125; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid #1a1a3a; position: relative; }
         h2 { text-align: center; color: #00d2ff; font-size: 24px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
         .timer-container { text-align: center; margin-bottom: 20px; padding: 15px; border: 2px dashed #00d2ff; border-radius: 15px; background: rgba(0, 210, 255, 0.05); }
         #statusText { color: #aaa; font-size: 14px; margin-bottom: 5px; display: block; }
@@ -29,16 +35,16 @@
 </head>
 <body>
 
-<div id="loginPage" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050510; display: flex; justify-content: center; align-items: center; z-index: 1000;">
-    <div class="login-box" style="background: #111125; padding: 40px; border-radius: 20px; border: 1px solid #1a1a3a; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
-        <h2 style="color: #00d2ff; margin-bottom: 20px;">User Login</h2>
-        <input type="text" id="username" placeholder="Username" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #2a2a4a; background: #1a1a3a; color: white; box-sizing: border-box;">
-        <input type="password" id="password" placeholder="Password" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #2a2a4a; background: #1a1a3a; color: white; box-sizing: border-box;">
-        <button onclick="login()" style="width: 100%; padding: 12px; background: #00d2ff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase;">Login</button>
+<div id="loginPage">
+    <div class="login-box">
+        <h2>User Login</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
     </div>
 </div>
 
-<div id="mainPanel" style="display: none; width: 90%; max-width: 500px;">
+<div id="mainPanel">
     <button class="logout-btn" onclick="logout()">Logout</button>
     <div class="panel">
         <h2>LIVE PANEL</h2>
@@ -48,25 +54,21 @@
         </div>
         <div id="progressContainer" class="progress-container">
             <div class="progress-bar-bg"><div id="progressFill" class="progress-bar-fill"></div></div>
-            <span id="progressPercent">Uploading... 0% (0 MB)</span>
-        </div>
-        <div class="input-group">
-            <label>Stream Name</label>
-            <input type="text" id="streamName" placeholder="Nayem Live">
+            <span id="progressPercent">Uploading... 0%</span>
         </div>
         <div class="input-group">
             <label>Source Type</label>
             <select id="sourceType" onchange="toggleSource()">
-                <option value="link">🔗 Video/YouTube Link</option>
+                <option value="link">🔗 Video/YouTube/Dropbox Link</option>
                 <option value="file">📁 Upload Video File</option>
             </select>
         </div>
         <div id="linkInput" class="input-group">
             <label>Video URL:</label>
-            <input type="text" id="videoSource" placeholder="https://youtube.com/...">
+            <input type="text" id="videoSource" placeholder="https://...">
         </div>
         <div id="fileInput" class="input-group hidden">
-            <label>Select Video File (Up to 1GB):</label>
+            <label>Select Video File:</label>
             <input type="file" id="videoFile" accept="video/*">
         </div>
         <div class="input-group">
@@ -76,19 +78,9 @@
                 <option value="shorts">📱 Shorts (Vertical 9:16)</option>
             </select>
         </div>
-        <div class="input-group">
-            <label>Stream Duration</label>
-            <select id="duration">
-                <option value="0">🔄 24/7 Loop (Unlimited)</option>
-                <option value="120">⏱️ 2 Hours</option>
-                <option value="180">⏱️ 3 Hours</option>
-                <option value="300">⏱️ 5 Hours</option>
-                <option value="1440">⏱️ 24 Hours</option>
-            </select>
-        </div>
         <div class="loop-container">
-            <input type="checkbox" id="loopStream" checked>
-            <label for="loopStream">🔄 Loop Video (Active)</label>
+            <input type="checkbox" id="loopStream">
+            <label for="loopStream">🔄 Loop Video (24/7 Live)</label>
         </div>
         <div class="input-group">
             <label>Target Platform</label>
@@ -115,7 +107,7 @@
     window.onload = async () => {
         if (sessionToken) showPanel();
         try {
-            const response = await fetch('/status');
+            const response = await fetch(`/status?token=${sessionToken}`);
             const data = await response.json();
             if (data.isActive && data.startTime) {
                 startTime = data.startTime;
@@ -180,7 +172,6 @@
         const platform = document.getElementById('platform').value;
         const loop = document.getElementById('loopStream').checked;
         const mode = document.getElementById('liveMode').value;
-        const duration = document.getElementById('duration').value;
 
         if (!key) { alert("স্ট্রিম কি বসান!"); return; }
 
@@ -190,7 +181,6 @@
         formData.append('key', key);
         formData.append('loop', loop);
         formData.append('mode', mode);
-        formData.append('duration', duration);
         formData.append('token', sessionToken);
 
         if (type === 'link') {
@@ -209,11 +199,9 @@
         xhr.upload.onprogress = (e) => {
             if (e.lengthComputable) {
                 const p = Math.round((e.loaded / e.total) * 100);
-                const mbLoaded = (e.loaded / (1024 * 1024)).toFixed(2);
-                const mbTotal = (e.total / (1024 * 1024)).toFixed(2);
                 progContainer.style.display = 'block';
                 progFill.style.width = p + '%';
-                progPercent.innerText = `Uploading... ${p}% (${mbLoaded} MB / ${mbTotal} MB)`;
+                progPercent.innerText = `Uploading... ${p}%`;
                 statusText.innerText = `Status: Uploading ${p}%`;
             }
         };
@@ -222,13 +210,13 @@
             if (xhr.status === 200) {
                 alert("লাইভ শুরু হয়েছে!");
                 statusText.innerText = "Status: Live Stream Started!";
-                fetch('/status').then(res => res.json()).then(data => {
+                fetch(`/status?token=${sessionToken}`).then(res => res.json()).then(data => {
                     startTime = data.startTime;
                     startSyncTimer();
                 });
                 btnArea.innerHTML = `<button id="stopBtn" class="stop-btn" onclick="stopStream()">Stop Live Stream</button>`;
             } else {
-                alert("সার্ভার এরর! সম্ভবত ফাইলটি খুব বড়।");
+                alert("সার্ভার এরর!");
                 statusText.innerText = "Status: Error Occurred";
                 btn.innerText = "Start Live Stream";
                 btn.disabled = false;
