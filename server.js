@@ -8,7 +8,12 @@ const upload = multer({ dest: 'uploads/' });
 let activeStreams = {}; 
 let streamStartTimes = {};
 
-const ADMIN_PASSWORD = "password123"; 
+// 🔒 ইউজার এবং পাসওয়ার্ড লিস্ট
+const USERS = {
+    "sakib": "sakib12",
+    "rana12": "rana12hello",
+    "admin": "password123"
+};
 
 app.use(express.static('.'));
 app.use(express.json());
@@ -46,17 +51,21 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
         return res.send("File uploaded! Starting Crystal Clear Stream...");
     } 
     
-    if (type === 'link' && (source && (source.includes('youtube.com') || source.includes('youtu.be')))) {
-        exec(`yt-dlp --user-agent "Mozilla/5.0" -f "best[ext=mp4]/best" -g ${source}`, (error, stdout) => {
-            if (error) return;
-            startFfmpeg(token, stdout.trim(), platform, key, loop, mode);
-        });
-        return res.send("YouTube link processed! Starting Crystal Clear Stream...");
-    } 
-    
-    if (source) {
-        startFfmpeg(token, source, platform, key, loop, mode);
-        return res.send("Direct link processed! Starting Crystal Clear Stream...");
+    if (type === 'link' && source) {
+        // ড্রপবক্স বা ইউটিউব লিংক হ্যান্ডেল করা
+        let finalUrl = source;
+        if (source.includes('dropbox.com')) {
+            finalUrl = source.replace('dl=0', 'dl=1');
+        } else if (source.includes('youtube.com') || source.includes('youtu.be')) {
+            exec(`yt-dlp --user-agent "Mozilla/5.0" -f "best[ext=mp4]/best" -g ${source}`, (error, stdout) => {
+                if (error) return;
+                startFfmpeg(token, stdout.trim(), platform, key, loop, mode);
+            });
+            return res.send("YouTube link processed! Starting Crystal Clear Stream...");
+        } else {
+            startFfmpeg(token, finalUrl, platform, key, loop, mode);
+        }
+        return res.send("Link processed! Starting Crystal Clear Stream...");
     }
 
     res.status(400).send("Invalid source!");
@@ -78,19 +87,18 @@ app.post('/stop-stream', (req, res) => {
 function startFfmpeg(token, input, platform, key, loop, mode) {
     const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
     
+    // 🌟 হাই-কোয়ালিটি ১০৮০পি সেটিংস (চেপটা হবে না)
     let scaleFilter;
     if (mode === 'shorts') {
-        scaleFilter = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280";
+        scaleFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920";
     } else {
-        scaleFilter = "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2";
+        scaleFilter = "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2";
     }
     
-    // 🌟 সুপার ক্লিয়ার সেটিংস:
-    // ১. বিটরেট বাড়িয়ে ২০০০k করা হয়েছে যাতে ঘোলা না হয়।
-    // ২. unsharp ফিল্টার যোগ করা হয়েছে যা ভিডিওর এজগুলোকে শার্প করবে (ঘোলা ভাব কমাবে)।
-    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter},unsharp=3:3:1.0:3:3:0.0" -c:v libx264 -preset ultrafast -b:v 2000k -maxrate 2000k -bufsize 4000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
+    // বিটরেট ৩০০০k এবং শার্পনেস ফিল্টার যোগ করা হয়েছে যাতে একদম ক্লিয়ার দেখায়
+    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter},unsharp=3:3:1.0:3:3:0.0" -c:v libx264 -preset ultrafast -b:v 3000k -maxrate 3000k -bufsize 6000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
     
-    console.log(`Starting High-Quality Stream for ${token}...`);
+    console.log(`User ${token} starting High-Quality Stream...`);
     streamStartTimes[token] = Date.now();
     
     const stream = exec(ffmpegCmd);
@@ -108,4 +116,4 @@ function startFfmpeg(token, input, platform, key, loop, mode) {
 }
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Crystal-Clear Stream Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Multi-User High-Quality Server running on port ${PORT}`));
