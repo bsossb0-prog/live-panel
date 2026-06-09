@@ -8,11 +8,7 @@ const upload = multer({ dest: 'uploads/' });
 let activeStreams = {}; 
 let streamStartTimes = {};
 
-const USERS = {
-    "sakib": "sakib12",
-    "rana12": "rana12hello",
-    "admin": "password123"
-};
+const ADMIN_PASSWORD = "password123"; 
 
 app.use(express.static('.'));
 app.use(express.json());
@@ -34,20 +30,36 @@ app.get('/status', (req, res) => {
 });
 
 app.post('/start-stream', upload.single('videoFile'), (req, res) => {
-    const { platform, key, loop, token, mode, duration } = req.body;
-    
+    const { type, platform, key, loop, token, mode } = req.body;
+    let source = req.body.source;
+
     if (!USERS[token]) return res.status(403).send("Unauthorized!");
     if (!platform || !key) return res.status(400).send("Missing details!");
-
-    if (!req.file) return res.status(400).send("Please upload a video file!");
 
     if (activeStreams[token]) {
         activeStreams[token].kill('SIGKILL');
     }
 
-    const source = req.file.path; 
-    startFfmpeg(token, source, platform, key, loop, mode, duration);
-    return res.send("File uploaded! Starting Stable HD Stream...");
+    if (type === 'file' && req.file) {
+        source = req.file.path; 
+        startFfmpeg(token, source, platform, key, loop, mode);
+        return res.send("File uploaded! Starting Crystal Clear Stream...");
+    } 
+    
+    if (type === 'link' && (source && (source.includes('youtube.com') || source.includes('youtu.be')))) {
+        exec(`yt-dlp --user-agent "Mozilla/5.0" -f "best[ext=mp4]/best" -g ${source}`, (error, stdout) => {
+            if (error) return;
+            startFfmpeg(token, stdout.trim(), platform, key, loop, mode);
+        });
+        return res.send("YouTube link processed! Starting Crystal Clear Stream...");
+    } 
+    
+    if (source) {
+        startFfmpeg(token, source, platform, key, loop, mode);
+        return res.send("Direct link processed! Starting Crystal Clear Stream...");
+    }
+
+    res.status(400).send("Invalid source!");
 });
 
 app.post('/stop-stream', (req, res) => {
@@ -63,19 +75,22 @@ app.post('/stop-stream', (req, res) => {
     res.send("No stream running.");
 });
 
-function startFfmpeg(token, input, platform, key, loop, mode, duration) {
+function startFfmpeg(token, input, platform, key, loop, mode) {
     const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
     
-    // 🌟 স্থিতিশীল এইচডি সেটিংস (720p)
-    // রেজোলিউশন ৭২০পি রাখা হয়েছে যাতে সার্ভার ক্র্যাশ না করে কিন্তু ভিডিও পরিষ্কার থাকে
-    let scaleFilter = mode === 'shorts' ? 
-        "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280" : 
-        "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2";
+    let scaleFilter;
+    if (mode === 'shorts') {
+        scaleFilter = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280";
+    } else {
+        scaleFilter = "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2";
+    }
     
-    // বিটরেট ১০০০k - এটি ফ্রি সার্ভারের জন্য সবচেয়ে নিরাপদ এবং ক্লিয়ার সেটিংস
-    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter}" -c:v libx264 -preset ultrafast -b:v 1000k -maxrate 1000k -bufsize 2000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 96k -f flv ${platform}/${key}`;
+    // 🌟 সুপার ক্লিয়ার সেটিংস:
+    // ১. বিটরেট বাড়িয়ে ২০০০k করা হয়েছে যাতে ঘোলা না হয়।
+    // ২. unsharp ফিল্টার যোগ করা হয়েছে যা ভিডিওর এজগুলোকে শার্প করবে (ঘোলা ভাব কমাবে)।
+    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter},unsharp=3:3:1.0:3:3:0.0" -c:v libx264 -preset ultrafast -b:v 2000k -maxrate 2000k -bufsize 4000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
     
-    console.log(`Starting stable stream for ${token}...`);
+    console.log(`Starting High-Quality Stream for ${token}...`);
     streamStartTimes[token] = Date.now();
     
     const stream = exec(ffmpegCmd);
@@ -93,4 +108,4 @@ function startFfmpeg(token, input, platform, key, loop, mode, duration) {
 }
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Stable-Stream Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Crystal-Clear Stream Server running on port ${PORT}`));
