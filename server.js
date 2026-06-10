@@ -4,12 +4,10 @@ const multer = require('multer');
 const fs = require('fs');
 const app = express();
 
-// ফাইল আপলোড সেটিংস
 const upload = multer({ dest: 'uploads/' });
 let activeStreams = {}; 
 let streamStartTimes = {};
 
-// 🔒 ইউজার এবং পাসওয়ার্ড লিস্ট
 const USERS = {
     "sakib": "sakib12",
     "rana12": "rana12hello",
@@ -19,16 +17,14 @@ const USERS = {
 app.use(express.static('.'));
 app.use(express.json());
 
-// লগইন সিস্টেম
 app.post('/login', (req, res) => {
     const { user, pass } = req.body;
     if (USERS[user] && USERS[user] === pass) {
-        return res.json({ token: user }); 
+        return res.json({ token: user });
     }
     res.status(401).send("ভুল ইউজারনেম অথবা পাসওয়ার্ড!");
 });
 
-// লাইভ স্ট্যাটাস চেক (টাইমারের জন্য)
 app.get('/status', (req, res) => {
     const token = req.query.token;
     res.json({ 
@@ -37,7 +33,6 @@ app.get('/status', (req, res) => {
     });
 });
 
-// লাইভ শুরু করার এন্ডপয়েন্ট
 app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     const { type, platform, key, loop, token, mode } = req.body;
     let source = req.body.source;
@@ -45,7 +40,6 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     if (!USERS[token]) return res.status(403).send("Unauthorized!");
     if (!platform || !key) return res.status(400).send("Missing details!");
 
-    // ওই ইউজারের আগে কোনো লাইভ চললে তা বন্ধ করা
     if (activeStreams[token]) {
         activeStreams[token].kill('SIGKILL');
     }
@@ -53,12 +47,11 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     if (type === 'file' && req.file) {
         source = req.file.path; 
         startFfmpeg(token, source, platform, key, loop, mode);
-        return res.send("File uploaded! Starting Crystal Clear Stream...");
+        return res.send("File uploaded! Starting Stable Stream...");
     } 
     
     if (type === 'link' && source) {
         let finalUrl = source;
-        // ড্রপবক্স লিংক অটো-ফিক্স (dl=0 কে dl=1 করা)
         if (source.includes('dropbox.com')) {
             finalUrl = source.replace('dl=0', 'dl=1');
         } else if (source.includes('youtube.com') || source.includes('youtu.be')) {
@@ -66,17 +59,16 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
                 if (error) return;
                 startFfmpeg(token, stdout.trim(), platform, key, loop, mode);
             });
-            return res.send("YouTube link processed! Starting Crystal Clear Stream...");
+            return res.send("YouTube link processed! Starting Stable Stream...");
         } else {
             startFfmpeg(token, finalUrl, platform, key, loop, mode);
         }
-        return res.send("Link processed! Starting Crystal Clear Stream...");
+        return res.send("Link processed! Starting Stable Stream...");
     }
 
     res.status(400).send("Invalid source!");
 });
 
-// লাইভ বন্ধ করার এন্ডপয়েন্ট
 app.post('/stop-stream', (req, res) => {
     const { token } = req.body;
     if (!USERS[token]) return res.status(403).send("Unauthorized!");
@@ -93,21 +85,20 @@ app.post('/stop-stream', (req, res) => {
 function startFfmpeg(token, input, platform, key, loop, mode) {
     const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
     
-    // 🌟 মোড অনুযায়ী রেজোলিউশন সেটআপ (চেপটা হবে না)
+    // 🌟 শর্টস এবং স্ট্যান্ডার্ড মোড ফিক্স (চেপটা হবে না)
     let scaleFilter;
     if (mode === 'shorts') {
-        // শর্টস মোড: ১০৮০x১৯২০ (Vertical)
-        scaleFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920";
+        // শর্টস মোড: ৭২০x১২৮০ (HD Vertical) - এটি র‍্যাম কম খাবে এবং ক্র্যাশ করবে না
+        scaleFilter = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280";
     } else {
-        // স্ট্যান্ডার্ড মোড: ১৯২০x১০৮০ (Horizontal)
-        scaleFilter = "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2";
+        // স্ট্যান্ডার্ড মোড: ১২৮০x৭২০ (HD Horizontal)
+        scaleFilter = "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2";
     }
     
-    // 🌟 হাই-কোয়ালিটি এবং স্টেবল সেটিংস
-    // -flvflags no_duration_filesize যোগ করা হয়েছে যাতে ইউটিউবে দ্রুত কানেক্ট হয়
-    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter},unsharp=3:3:1.0:3:3:0.0" -c:v libx264 -preset ultrafast -b:v 2000k -maxrate 2000k -bufsize 4000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -flvflags no_duration_filesize -f flv ${platform}/${key}`;
+    // বিটরেট ১৫০০k রাখা হয়েছে যাতে ভিডিও ক্লিয়ার থাকে এবং সার্ভার ক্র্যাশ না করে
+    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter},unsharp=3:3:1.0:3:3:0.0" -c:v libx264 -preset ultrafast -b:v 1500k -maxrate 1500k -bufsize 3000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -flvflags no_duration_filesize -f flv ${platform}/${key}`;
     
-    console.log(`Starting HD Stream for ${token}...`);
+    console.log(`Starting Stable Stream for ${token} in ${mode} mode...`);
     streamStartTimes[token] = Date.now();
     
     const stream = exec(ffmpegCmd);
@@ -125,4 +116,4 @@ function startFfmpeg(token, input, platform, key, loop, mode) {
 }
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Pro-Live Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Ultra-Stable Multi-User Server running on port ${PORT}`));
