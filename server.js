@@ -4,6 +4,7 @@ const multer = require('multer');
 const fs = require('fs');
 const app = express();
 
+// ফাইল আপলোড সেটিংস
 const upload = multer({ dest: 'uploads/' });
 let activeStreams = {}; 
 let streamStartTimes = {};
@@ -18,14 +19,16 @@ const USERS = {
 app.use(express.static('.'));
 app.use(express.json());
 
+// লগইন সিস্টেম
 app.post('/login', (req, res) => {
     const { user, pass } = req.body;
     if (USERS[user] && USERS[user] === pass) {
-        return res.json({ token: user });
+        return res.json({ token: user }); 
     }
     res.status(401).send("ভুল ইউজারনেম অথবা পাসওয়ার্ড!");
 });
 
+// লাইভ স্ট্যাটাস চেক (টাইমারের জন্য)
 app.get('/status', (req, res) => {
     const token = req.query.token;
     res.json({ 
@@ -34,6 +37,7 @@ app.get('/status', (req, res) => {
     });
 });
 
+// লাইভ শুরু করার এন্ডপয়েন্ট
 app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     const { type, platform, key, loop, token, mode } = req.body;
     let source = req.body.source;
@@ -41,6 +45,7 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     if (!USERS[token]) return res.status(403).send("Unauthorized!");
     if (!platform || !key) return res.status(400).send("Missing details!");
 
+    // ওই ইউজারের আগে কোনো লাইভ চললে তা বন্ধ করা
     if (activeStreams[token]) {
         activeStreams[token].kill('SIGKILL');
     }
@@ -52,8 +57,8 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     } 
     
     if (type === 'link' && source) {
-        // ড্রপবক্স বা ইউটিউব লিংক হ্যান্ডেল করা
         let finalUrl = source;
+        // ড্রপবক্স লিংক অটো-ফিক্স (dl=0 কে dl=1 করা)
         if (source.includes('dropbox.com')) {
             finalUrl = source.replace('dl=0', 'dl=1');
         } else if (source.includes('youtube.com') || source.includes('youtu.be')) {
@@ -71,6 +76,7 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     res.status(400).send("Invalid source!");
 });
 
+// লাইভ বন্ধ করার এন্ডপয়েন্ট
 app.post('/stop-stream', (req, res) => {
     const { token } = req.body;
     if (!USERS[token]) return res.status(403).send("Unauthorized!");
@@ -87,18 +93,21 @@ app.post('/stop-stream', (req, res) => {
 function startFfmpeg(token, input, platform, key, loop, mode) {
     const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
     
-    // 🌟 হাই-কোয়ালিটি ১০৮০পি সেটিংস (চেপটা হবে না)
+    // 🌟 মোড অনুযায়ী রেজোলিউশন সেটআপ (চেপটা হবে না)
     let scaleFilter;
     if (mode === 'shorts') {
+        // শর্টস মোড: ১০৮০x১৯২০ (Vertical)
         scaleFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920";
     } else {
+        // স্ট্যান্ডার্ড মোড: ১৯২০x১০৮০ (Horizontal)
         scaleFilter = "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2";
     }
     
-    // বিটরেট ৩০০০k এবং শার্পনেস ফিল্টার যোগ করা হয়েছে যাতে একদম ক্লিয়ার দেখায়
-    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter},unsharp=3:3:1.0:3:3:0.0" -c:v libx264 -preset ultrafast -b:v 3000k -maxrate 3000k -bufsize 6000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
+    // 🌟 হাই-কোয়ালিটি এবং স্টেবল সেটিংস
+    // -flvflags no_duration_filesize যোগ করা হয়েছে যাতে ইউটিউবে দ্রুত কানেক্ট হয়
+    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter},unsharp=3:3:1.0:3:3:0.0" -c:v libx264 -preset ultrafast -b:v 2000k -maxrate 2000k -bufsize 4000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -flvflags no_duration_filesize -f flv ${platform}/${key}`;
     
-    console.log(`User ${token} starting High-Quality Stream...`);
+    console.log(`Starting HD Stream for ${token}...`);
     streamStartTimes[token] = Date.now();
     
     const stream = exec(ffmpegCmd);
@@ -116,4 +125,4 @@ function startFfmpeg(token, input, platform, key, loop, mode) {
 }
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Multi-User High-Quality Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Pro-Live Server running on port ${PORT}`));
