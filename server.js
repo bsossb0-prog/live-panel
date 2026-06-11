@@ -48,7 +48,7 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     if (type === 'file' && req.file) {
         source = req.file.path; 
         startFfmpeg(token, source, platform, key, loop, mode);
-        return res.send("File uploaded! Starting Crystal Clear Stream...");
+        return res.send("File uploaded! Starting High-Quality Stream...");
     } 
     
     if (type === 'link' && source) {
@@ -60,11 +60,11 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
                 if (error) return;
                 startFfmpeg(token, stdout.trim(), platform, key, loop, mode);
             });
-            return res.send("YouTube link processed! Starting Crystal Clear Stream...");
+            return res.send("YouTube link processed! Starting High-Quality Stream...");
         } else {
             startFfmpeg(token, finalUrl, platform, key, loop, mode);
         }
-        return res.send("Link processed! Starting Crystal Clear Stream...");
+        return res.send("Link processed! Starting High-Quality Stream...");
     }
 
     res.status(400).send("Invalid source!");
@@ -88,11 +88,14 @@ function startFfmpeg(token, input, platform, key, loop, mode) {
     
     let scaleFilter;
     if (mode === 'shorts') {
+        // শর্টস মোড: ১০৮০x১৯২০ (Vertical) - চেপটা হবে না
         scaleFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920";
     } else {
-        scaleFilter = "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2";
+        // স্ট্যান্ডার্ড মোড: ১২৮০x৭২০ (HD Horizontal) - সার্ভার স্টেবল থাকবে
+        scaleFilter = "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2";
     }
     
+    // বিটরেট ২০০০k এবং শার্পনেস ফিল্টার যোগ করা হয়েছে
     const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter},unsharp=3:3:1.0:3:3:0.0" -c:v libx264 -preset ultrafast -b:v 2000k -maxrate 2000k -bufsize 4000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -flvflags no_duration_filesize -f flv ${platform}/${key}`;
     
     console.log(`User ${token} starting High-Quality Stream...`);
@@ -113,4 +116,4 @@ function startFfmpeg(token, input, platform, key, loop, mode) {
 }
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Multi-User High-Quality Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Premium Multi-User Server running on port ${PORT}`));
