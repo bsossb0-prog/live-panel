@@ -90,7 +90,6 @@ function startFfmpeg(token, input, platform, key, loop, mode) {
         scaleFilter = "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2";
     }
     
-    // ইউটিউব কানেক্টিভিটি ইমপ্রুভ করার জন্য নতুন ফ্ল্যাগ যোগ করা হয়েছে
     const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter},unsharp=3:3:1.0:3:3:0.0" -c:v libx264 -preset ultrafast -b:v 1500k -maxrate 1500k -bufsize 3000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -flvflags no_duration_filesize -f flv ${platform}/${key}`;
     
     console.log(`User ${token} starting HD Stream...`);
