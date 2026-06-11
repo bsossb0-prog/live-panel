@@ -8,7 +8,6 @@ const upload = multer({ dest: 'uploads/' });
 let activeStreams = {}; 
 let streamStartTimes = {};
 
-// 🔒 ইউজার এবং পাসওয়ার্ড লিস্ট
 const USERS = {
     "sakib": "sakib12",
     "rana12": "rana12hello",
@@ -23,13 +22,13 @@ app.post('/login', (req, res) => {
     if (USERS[user] && USERS[user] === pass) {
         return res.json({ token: user });
     }
-    res.status(401).send("ভুল ইউজারনেম অথবা পাসওয়ার্ড!");
+    res.status(401).send("Wrong Password!");
 });
 
 app.get('/status', (req, res) => {
     const token = req.query.token;
     res.json({ 
-        isActive: activeStreams[token] !== null, 
+        isActive: !!activeStreams[token], 
         startTime: streamStartTimes[token] 
     });
 });
@@ -39,7 +38,7 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     let source = req.body.source;
 
     if (!USERS[token]) return res.status(403).send("Unauthorized!");
-    if (!platform || !key) return res.status(400).send("Missing details!");
+    if (!platform || !key) return res.status(400).send("Missing Details!");
 
     if (activeStreams[token]) {
         activeStreams[token].kill('SIGKILL');
@@ -48,7 +47,7 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     if (type === 'file' && req.file) {
         source = req.file.path; 
         startFfmpeg(token, source, platform, key, loop, mode);
-        return res.send("File uploaded! Starting High-Quality Stream...");
+        return res.send("File uploaded! Starting HD Stream...");
     } 
     
     if (type === 'link' && source) {
@@ -60,20 +59,18 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
                 if (error) return;
                 startFfmpeg(token, stdout.trim(), platform, key, loop, mode);
             });
-            return res.send("YouTube link processed! Starting High-Quality Stream...");
+            return res.send("YouTube link processed! Starting HD Stream...");
         } else {
             startFfmpeg(token, finalUrl, platform, key, loop, mode);
         }
-        return res.send("Link processed! Starting High-Quality Stream...");
+        return res.send("Link processed! Starting HD Stream...");
     }
-
-    res.status(400).send("Invalid source!");
+    res.status(400).send("Invalid Source!");
 });
 
 app.post('/stop-stream', (req, res) => {
     const { token } = req.body;
     if (!USERS[token]) return res.status(403).send("Unauthorized!");
-    
     if (activeStreams[token]) {
         activeStreams[token].kill('SIGKILL');
         activeStreams[token] = null;
@@ -88,17 +85,14 @@ function startFfmpeg(token, input, platform, key, loop, mode) {
     
     let scaleFilter;
     if (mode === 'shorts') {
-        // শর্টস মোড: ১০৮০x১৯২০ (Vertical) - চেপটা হবে না
         scaleFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920";
     } else {
-        // স্ট্যান্ডার্ড মোড: ১২৮০x৭২০ (HD Horizontal) - সার্ভার স্টেবল থাকবে
         scaleFilter = "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2";
     }
     
-    // বিটরেট ২০০০k এবং শার্পনেস ফিল্টার যোগ করা হয়েছে
-    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter},unsharp=3:3:1.0:3:3:0.0" -c:v libx264 -preset ultrafast -b:v 2000k -maxrate 2000k -bufsize 4000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -flvflags no_duration_filesize -f flv ${platform}/${key}`;
+    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter},unsharp=3:3:1.0:3:3:0.0" -c:v libx264 -preset ultrafast -b:v 1500k -maxrate 1500k -bufsize 3000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -flvflags no_duration_filesize -f flv ${platform}/${key}`;
     
-    console.log(`User ${token} starting High-Quality Stream...`);
+    console.log(`User ${token} starting HD Stream...`);
     streamStartTimes[token] = Date.now();
     
     const stream = exec(ffmpegCmd);
@@ -106,7 +100,7 @@ function startFfmpeg(token, input, platform, key, loop, mode) {
 
     stream.stderr.on('data', (data) => console.log(`FFmpeg [${token}]: ${data}`));
     stream.on('exit', (code) => {
-        console.log(`Stream for ${token} exited with code ${code}`);
+        console.log(`Stream ${token} exited with code ${code}`);
         if (input.includes('uploads/')) {
             try { fs.unlinkSync(input); } catch (e) {}
         }
