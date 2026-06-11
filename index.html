@@ -19,62 +19,45 @@
             --green:#24f7a3;
             --border:rgba(255,255,255,.12);
             --shadow:0 28px 80px rgba(0,0,0,.55);
+            --radius: 24px;
         }
         *{box-sizing:border-box}
-        html{scroll-behavior:smooth}
         body{
             margin:0;
             min-height:100vh;
             color:var(--text);
-            font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background:
-                radial-gradient(circle at 15% 10%, rgba(0,229,255,.22), transparent 28%),
-                radial-gradient(circle at 85% 5%, rgba(139,92,246,.25), transparent 28%),
-                radial-gradient(circle at 50% 100%, rgba(255,61,190,.12), transparent 35%),
-                linear-gradient(135deg,#03040b 0%,#090c1c 50%,#050713 100%);
+            font-family:Inter, ui-sans-serif, system-ui, sans-serif;
+            background: radial-gradient(circle at 15% 10%, rgba(0,229,255,.22), transparent 28%), linear-gradient(135deg,#03040b 0%,#090c1c 50%,#050713 100%);
             display:flex;
             justify-content:center;
             align-items:center;
             padding:18px;
             overflow-x:hidden;
         }
-        body::before{
-            content:"";
-            position:fixed;
-            inset:0;
-            pointer-events:none;
-            background-image:
-                linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
-            background-size:42px 42px;
-            mask-image:linear-gradient(to bottom, rgba(0,0,0,.8), transparent 82%);
-        }
-        #loginPage{
+        #loginPage {
             position:fixed;
             inset:0;
             display:flex;
-            align-items:center;
             justify-content:center;
+            align-items:center;
             z-index:1000;
             padding:22px;
             background:rgba(3,4,12,.85);
             backdrop-filter:blur(22px);
         }
-        .login-box{
+        .login-box {
             width:min(390px,100%);
-            position:relative;
             padding:34px 28px 28px;
             border-radius:28px;
             border:1px solid var(--border);
             background:linear-gradient(160deg, rgba(22,28,54,.82), rgba(9,12,28,.92));
-            box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.12);
+            box-shadow:var(--shadow);
             text-align:center;
         }
-        .login-box h2,.panel h2{
+        .login-box h2, .panel h2 {
             margin:0;
             text-align:center;
             font-size:clamp(24px,6vw,36px);
-            line-height:1.1;
             text-transform:uppercase;
             letter-spacing:4px;
             color:transparent;
@@ -85,12 +68,7 @@
             animation:shineText 5s linear infinite;
         }
         @keyframes shineText{to{background-position:220% center}}
-        .subtitle{
-            margin:10px 0 22px;
-            color:var(--muted);
-            font-size:13px;
-        }
-        .login-box input,.input-group input,.input-group select{
+        .login-box input, .input-group input, .input-group select {
             width:100%;
             min-height:54px;
             padding:14px 16px;
@@ -102,14 +80,9 @@
             font-size:15px;
             box-sizing:border-box;
             transition:.22s ease;
+            margin-bottom:13px;
         }
-        .login-box input{margin-bottom:13px}
-        .login-box input:focus,.input-group input:focus,.input-group select:focus{
-            border-color:rgba(0,229,255,.75);
-            box-shadow:0 0 0 4px rgba(0,229,255,.12);
-            background:rgba(255,255,255,.1);
-        }
-        .login-box button,.start-btn,.stop-btn{
+        .login-box button, .start-btn, .stop-btn {
             width:100%;
             min-height:56px;
             border:0;
@@ -119,30 +92,25 @@
             text-transform:uppercase;
             transition:transform .2s ease;
         }
-        .login-box button,.start-btn{
+        .login-box button, .start-btn {
             color:#03101a;
             background:linear-gradient(135deg,var(--cyan),#48ffdf 45%,var(--purple));
             box-shadow:0 16px 38px rgba(0,229,255,.22);
         }
-        .stop-btn{
+        .stop-btn {
             color:#fff;
             background:linear-gradient(135deg,#ff3b5f,#ff7b2f);
             box-shadow:0 16px 38px rgba(255,59,95,.22);
         }
-        #mainPanel{
-            display:none;
-            width:100%;
-            max-width:560px;
-            position:relative;
-        }
-        .panel{
+        #mainPanel { display:none; width:100%; max-width:560px; position:relative; }
+        .panel {
             padding:26px;
             border-radius:32px;
             border:1px solid var(--border);
             background:linear-gradient(160deg, rgba(17,22,43,.88), rgba(8,11,27,.95));
             box-shadow:var(--shadow);
         }
-        .logout-btn{
+        .logout-btn {
             position:absolute;
             top:18px;
             right:18px;
@@ -155,7 +123,7 @@
             cursor:pointer;
             font-size:12px;
         }
-        .timer-container{
+        .timer-container {
             text-align:center;
             margin:18px 0 22px;
             padding:22px 16px;
@@ -163,37 +131,22 @@
             border:1px solid rgba(0,229,255,.35);
             background:linear-gradient(135deg, rgba(0,229,255,.09), rgba(139,92,246,.08));
         }
-        #statusText{
-            display:block;
-            color:#d8e3f7;
-            font-size:13px;
-            margin-bottom:8px;
-        }
-        #timer{
+        #statusText { display:block; color:#d8e3f7; font-size:13px; margin-bottom:8px; }
+        #timer {
             color:#eaffff;
             font-size:clamp(42px,12vw,64px);
             font-weight:900;
             font-family:monospace;
             text-shadow:0 0 14px rgba(0,229,255,.9);
         }
-        .progress-container{display:none;margin:0 0 20px;text-align:center}
-        .progress-bar-bg{
-            width:100%;height:14px;
-            border-radius:999px;
-            background:rgba(255,255,255,.08);
-            overflow:hidden;
-            border:1px solid var(--border);
-        }
-        .progress-bar-fill{
-            height:100%;width:0%;
-            background:linear-gradient(90deg,var(--cyan),var(--purple),var(--pink));
-            transition:width .2s;
-        }
-        #progressPercent{display:block;margin-top:7px;color:var(--cyan);font-size:13px;font-weight:800}
-        .input-group{margin-bottom:16px}
-        label{display:block;margin:0 0 8px;color:#b9c4d7;font-size:14px;font-weight:700}
-        .hidden{display:none!important}
-        .loop-container{
+        .progress-container { display:none; margin:0 0 20px; text-align:center; }
+        .progress-bar-bg { width:100%; height:14px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; border:1px solid var(--border); }
+        .progress-bar-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--pink)); transition:width .2s; }
+        #progressPercent { display:block; margin-top:7px; color:var(--cyan); font-size:13px; font-weight:800; }
+        .input-group { margin-bottom:16px; }
+        label { display:block; margin:0 0 8px; color:#b9c4d7; font-size:14px; font-weight:700; }
+        .hidden { display:none!important; }
+        .loop-container {
             display:flex;
             align-items:center;
             gap:13px;
@@ -204,18 +157,18 @@
             border:1px solid rgba(0,229,255,.2);
             background:rgba(0,229,255,.05);
         }
-        .loop-container input{width:auto;cursor:pointer}
-        .loop-container label{margin:0;color:#d8fbff;font-size:15px;font-weight:900;cursor:pointer}
-        .footer-note{text-align:center;margin-top:16px;color:rgba(220,230,255,.45);font-size:12px}
+        .loop-container input { width:auto; margin:0; cursor:pointer; }
+        .loop-container label { margin:0; color:#d8fbff; font-size:15px; font-weight:900; cursor:pointer; }
+        .footer-note { text-align:center; margin-top:16px; color:rgba(220,230,255,.45); font-size:12px; }
     </style>
 </head>
 <body>
 
 <div id="loginPage">
     <div class="login-box">
-        <div class="brand-badge" style="width:66px;height:66px;margin:0 auto 14px;display:grid;place-items:center;border-radius:22px;background:linear-gradient(135deg,rgba(0,229,255,.22),rgba(139,92,246,.25));border:1px solid rgba(255,255,255,.13);font-size:30px">⚡</div>
+        <div style="width:66px;height:66px;margin:0 auto 14px;display:grid;place-items:center;border-radius:22px;background:linear-gradient(135deg,rgba(0,229,255,.22),rgba(139,92,246,.25));border:1px solid rgba(255,255,255,.13);font-size:30px">⚡</div>
         <h2>User Login</h2>
-        <p class="subtitle">Enter credentials to access panel</p>
+        <p style="text-align:center; color:var(--muted); font-size:13px; margin-bottom:20px;">Enter credentials to access panel</p>
         <input type="text" id="username" placeholder="Username">
         <input type="password" id="password" placeholder="Password">
         <button onclick="login()">Login</button>
@@ -232,7 +185,7 @@
         </div>
         <div id="progressContainer" class="progress-container">
             <div class="progress-bar-bg"><div id="progressFill" class="progress-bar-fill"></div></div>
-            <span id="progressPercent">Uploading... 0%</span>
+            <span id="progressPercent">Uploading... 0% (0 MB)</span>
         </div>
         <div class="input-group">
             <label>Source Type</label>
@@ -303,7 +256,6 @@
         const user = document.getElementById('username').value;
         const pass = document.getElementById('password').value;
         if(!user || !pass) { alert("সবগুলো ঘর পূরণ করুন!"); return; }
-        
         try {
             const response = await fetch('/login', {
                 method: 'POST',
@@ -384,9 +336,11 @@
         xhr.upload.onprogress = (e) => {
             if (e.lengthComputable) {
                 const p = Math.round((e.loaded / e.total) * 100);
+                const mbLoaded = (e.loaded / (1024 * 1024)).toFixed(2);
+                const mbTotal = (e.total / (1024 * 1024)).toFixed(2);
                 progContainer.style.display = 'block';
                 progFill.style.width = p + '%';
-                progPercent.innerText = `Uploading... ${p}%`;
+                progPercent.innerText = `Uploading... ${p}% (${mbLoaded} MB / ${mbTotal} MB)`;
                 statusText.innerText = `Status: Uploading ${p}%`;
             }
         };
