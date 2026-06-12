@@ -28,7 +28,7 @@ app.post('/login', (req, res) => {
 app.get('/status', (req, res) => {
     const token = req.query.token;
     res.json({ 
-        isActive: !!activeStreams[token], 
+        isActive: activeStreams[token] !== null, 
         startTime: streamStartTimes[token] 
     });
 });
@@ -47,7 +47,7 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
     if (type === 'file' && req.file) {
         source = req.file.path; 
         startFfmpeg(token, source, platform, key, loop, mode);
-        return res.send("File uploaded! Starting HD Stream...");
+        return res.send("File uploaded! Starting Stable Stream...");
     } 
     
     if (type === 'link' && source) {
@@ -59,11 +59,11 @@ app.post('/start-stream', upload.single('videoFile'), (req, res) => {
                 if (error) return;
                 startFfmpeg(token, stdout.trim(), platform, key, loop, mode);
             });
-            return res.send("YouTube link processed! Starting HD Stream...");
+            return res.send("YouTube link processed! Starting Stable Stream...");
         } else {
             startFfmpeg(token, finalUrl, platform, key, loop, mode);
         }
-        return res.send("Link processed! Starting HD Stream...");
+        return res.send("Link processed! Starting Stable Stream...");
     }
     res.status(400).send("Invalid Source!");
 });
@@ -83,16 +83,20 @@ app.post('/stop-stream', (req, res) => {
 function startFfmpeg(token, input, platform, key, loop, mode) {
     const loopCmd = loop === 'true' ? '-stream_loop -1 ' : '';
     
+    // 🌟 রেজোলিউশন ফিক্স: শর্টস মোডকে ১০৮০ থেকে কমিয়ে ৭২০ করা হয়েছে যাতে সার্ভার ক্র্যাশ না করে
     let scaleFilter;
     if (mode === 'shorts') {
-        scaleFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920";
+        // শর্টস মোড: ৭২০x১২৮০ (Vertical) - এটি ফ্রি সার্ভারের জন্য সবচেয়ে নিরাপদ এবং ক্লিয়ার
+        scaleFilter = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280";
     } else {
+        // স্ট্যান্ডার্ড মোড: ১২৮০x৭২০ (Horizontal)
         scaleFilter = "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2";
     }
     
-    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter},unsharp=3:3:1.0:3:3:0.0" -c:v libx264 -preset ultrafast -b:v 1500k -maxrate 1500k -bufsize 3000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -flvflags no_duration_filesize -f flv ${platform}/${key}`;
+    // বিটরেট ১৫০০k রাখা হয়েছে যাতে ভিডিও ক্লিয়ার থাকে এবং সার্ভার লোড না নেয়
+    const ffmpegCmd = `ffmpeg -re ${loopCmd}-i "${input}" -vf "${scaleFilter},unsharp=3:3:1.0:3:3:0.0" -c:v libx264 -preset ultrafast -b:v 1500k -maxrate 1500k -bufsize 3000k -pix_fmt yuv420p -g 60 -c:a aac -b:a 128k -f flv ${platform}/${key}`;
     
-    console.log(`User ${token} starting HD Stream...`);
+    console.log(`User ${token} starting Stable HD Stream (${mode})...`);
     streamStartTimes[token] = Date.now();
     
     const stream = exec(ffmpegCmd);
@@ -110,4 +114,4 @@ function startFfmpeg(token, input, platform, key, loop, mode) {
 }
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Premium Multi-User Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Stable Multi-User Server running on port ${PORT}`));
