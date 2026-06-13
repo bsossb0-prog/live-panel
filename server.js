@@ -9,7 +9,7 @@ let activeStreams = {};
 let streamStartTimes = {};
 
 const USERS = {
-    "sakib": "sakib12",
+    "sakib": "sakib40",
     "rana12": "rana12hello",
     "admin": "password123"
 };
