@@ -1,548 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Pro High-Quality Live Panel</title>
-    <style>
-        :root {
-            --bg: #050817;
-            --bg2: #070b20;
-            --card: rgba(17, 24, 55, 0.78);
-            --card2: rgba(11, 17, 42, 0.88);
-            --stroke: rgba(72, 224, 255, 0.28);
-            --stroke2: rgba(170, 95, 255, 0.24);
-            --text: #f7fbff;
-            --muted: #9ca8c7;
-            --cyan: #28e6ff;
-            --blue: #4d7cff;
-            --purple: #8b5cff;
-            --pink: #ff62c7;
-            --green: #37f29b;
-            --red: #ff4d67;
-            --shadow: 0 24px 70px rgba(0, 0, 0, .48);
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Premium Live Control Center</title>
+  <style>
+    :root {
+      --bg: #040816; --bg-2: #0a1024; --panel: rgba(12, 19, 46, 0.78);
+      --border: rgba(113, 147, 255, 0.22); --text: #f4f7ff; --muted: #9eabd1;
+      --cyan: #35e8ff; --blue: #4a7dff; --purple: #bc52ff; --pink: #ff5cbc;
+      --green: #3ef2a2; --red: #ff5b77; --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; font-family: 'Inter', sans-serif; color: var(--text);
+      background: radial-gradient(circle at top right, rgba(188, 82, 255, 0.25), transparent 28%),
+                  radial-gradient(circle at bottom center, rgba(53, 232, 255, 0.12), transparent 25%),
+                  linear-gradient(145deg, #02050e 0%, #07102a 45%, #030814 100%);
+      display: flex; justify-content: center; align-items: center; padding: 20px;
+    }
+    #loginPage {
+      position: fixed; inset: 0; display: flex; justify-content: center; align-items: center;
+      z-index: 1000; background: rgba(3, 4, 12, 0.9); backdrop-filter: blur(20px);
+    }
+    .login-shell {
+      width: min(400px, 100%); padding: 2px; border-radius: 30px;
+      background: linear-gradient(135deg, var(--cyan), var(--purple), var(--pink));
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    .login-box { background: #0a1024; border-radius: 29px; padding: 40px 30px; text-align: center; }
+    .logo-badge {
+      width: 70px; height: 70px; margin: 0 auto 20px; border-radius: 20px;
+      display: grid; place-items: center; font-size: 35px;
+      background: linear-gradient(135deg, #ffd84c, #ffb100);
+    }
+    .login-box h1 { margin: 0; font-size: 28px; text-transform: uppercase; letter-spacing: 3px;
+      background: linear-gradient(90deg, #4de8ff, #ff82d5); -webkit-background-clip: text; color: transparent; }
+    .login-subtitle { color: var(--muted); font-size: 14px; margin: 10px 0 25px; }
+    .form-field { margin-bottom: 15px; text-align: left; }
+    .field-label { display: block; margin-bottom: 8px; font-size: 12px; color: #a7b7e3; text-transform: uppercase; }
+    .text-input { width: 100%; min-height: 50px; padding: 0 15px; border-radius: 12px; border: 1px solid rgba(135,160,255,0.2);
+      background: rgba(255,255,255,0.05); color: #fff; outline: none; transition: 0.3s; }
+    .text-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(53,232,255,0.2); }
+    .login-btn { width: 100%; min-height: 55px; border: none; border-radius: 15px; cursor: pointer; font-weight: 800;
+      text-transform: uppercase; background: linear-gradient(90deg, var(--cyan), var(--purple)); color: #050713; }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    #mainPanel { display: none; width: min(100%, 600px); position: relative; }
+    .panel {
+      background: linear-gradient(180deg, rgba(11,18,42,.98), rgba(9,15,34,.88));
+      padding: 30px; border-radius: 32px; border: 1px solid rgba(145,167,255,.14);
+      box-shadow: var(--shadow); backdrop-filter: blur(10px);
+    }
+    .hero { text-align: center; margin-bottom: 25px; }
+    .hero h2 { font-size: 32px; color: var(--cyan); text-transform: uppercase; margin: 0; }
+    
+    .timer-card {
+      text-align: center; margin-bottom: 25px; padding: 20px;
+      border-radius: 24px; border: 1px solid rgba(53,232,255,0.3);
+      background: rgba(53,232,255,0.05); box-shadow: 0 0 30px rgba(53,232,255,0.1);
+    }
+    #statusText { color: var(--green); font-size: 16px; font-weight: 700; display: block; margin-bottom: 10px; }
+    #timer { font-size: 50px; font-weight: 900; color: #fff; text-shadow: 0 0 20px var(--cyan); font-family: monospace; }
+    
+    .input-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+    .card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+    .card-title { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; margin-bottom: 10px; font-weight: 600; }
+    .card-title span { font-size: 20px; }
+    
+    select, .text-input { width: 100%; padding: 12px; border-radius: 12px; background: #0a1024; color: #fff; border: 1px solid rgba(135,160,255,0.2); outline: none; }
+    
+    .mode-options { display: flex; gap: 10px; }
+    .mode-opt { flex: 1; padding: 12px; border-radius: 12px; border: 1px solid rgba(135,160,255,0.2); background: rgba(255,255,255,0.03); 
+      cursor: pointer; text-align: center; font-size: 13px; color: #fff; transition: 0.3s; }
+    .mode-opt.active { background: var(--blue); border-color: var(--cyan); box-shadow: 0 0 15px rgba(53,232,255,0.3); }
+    
+    .loop-wrap { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 12px; }
+    .loop-wrap input { width: 18px; height: 18px; accent-color: var(--cyan); }
+    .loop-wrap label { font-size: 14px; color: var(--cyan); font-weight: 700; cursor: pointer; }
 
-        body {
-            min-height: 100vh;
-            margin: 0;
-            padding: 12px;
-            color: var(--text);
-            font-family: Inter, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background:
-                radial-gradient(circle at 15% 8%, rgba(40, 230, 255, .22), transparent 28%),
-                radial-gradient(circle at 92% 18%, rgba(255, 98, 199, .14), transparent 24%),
-                radial-gradient(circle at 78% 86%, rgba(139, 92, 255, .2), transparent 30%),
-                linear-gradient(160deg, #040713 0%, #080d25 52%, #03050d 100%);
-            overflow-x: hidden;
-        }
+    .start-btn { width: 100%; min-height: 60px; margin-top: 25px; border: none; border-radius: 20px; cursor: pointer;
+      font-weight: 900; text-transform: uppercase; font-size: 18px; color: #050713;
+      background: linear-gradient(90deg, var(--cyan), var(--purple)); box-shadow: 0 10px 25px rgba(0,229,255,0.3); }
+    .stop-btn { width: 100%; min-height: 60px; border: none; border-radius: 20px; cursor: pointer;
+      font-weight: 900; text-transform: uppercase; font-size: 18px; color: #fff;
+      background: linear-gradient(90deg, var(--red), #ff7b2f); box-shadow: 0 10px 25px rgba(255,59,95,0.3); }
 
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            background-image:
-                linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-            background-size: 34px 34px;
-            mask-image: linear-gradient(to bottom, rgba(0,0,0,.8), transparent 72%);
-        }
+    .logout-btn { position: absolute; top: 20px; right: 20px; padding: 6px 12px; border-radius: 10px; 
+      border: 1px solid var(--red); color: var(--red); background: rgba(255,59,95,0.1); cursor: pointer; font-size: 12px; }
+    
+    .progress-box { display: none; margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 15px; text-align: center; }
+    .prog-bar { height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; margin: 10px 0; }
+    .prog-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--cyan), var(--purple)); transition: 0.3s; }
+    #progText { font-size: 13px; color: var(--cyan); }
+    .hidden { display: none !important; }
 
-        #loginPage {
-            position: fixed;
-            inset: 0;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 18px;
-            background:
-                radial-gradient(circle at 25% 15%, rgba(40, 230, 255, .22), transparent 30%),
-                radial-gradient(circle at 85% 88%, rgba(139, 92, 255, .22), transparent 32%),
-                #050817;
-        }
-
-        .login-box {
-            width: min(100%, 360px);
-            padding: 26px 20px 22px;
-            text-align: center;
-            border-radius: 28px;
-            border: 1px solid rgba(75, 221, 255, .26);
-            background: linear-gradient(180deg, rgba(23, 31, 70, .9), rgba(10, 15, 38, .94));
-            box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.07);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .login-box::before {
-            content: "";
-            position: absolute;
-            inset: -2px;
-            background: linear-gradient(135deg, rgba(40,230,255,.28), transparent 35%, rgba(255,98,199,.22));
-            opacity: .8;
-            pointer-events: none;
-        }
-
-        .login-box > * { position: relative; z-index: 1; }
-        .login-box h2 {
-            margin: 0 0 18px;
-            font-size: 22px;
-            letter-spacing: 4px;
-            color: #fff;
-            text-transform: uppercase;
-        }
-        .login-box h2::after {
-            content: "";
-            display: block;
-            width: 56px;
-            height: 4px;
-            margin: 14px auto 0;
-            border-radius: 999px;
-            background: linear-gradient(90deg, var(--cyan), var(--purple), var(--pink));
-            box-shadow: 0 0 18px rgba(40,230,255,.45);
-        }
-        .login-box input {
-            width: 100%;
-            min-height: 48px;
-            margin-bottom: 12px;
-            padding: 0 15px;
-            border: 1px solid rgba(159, 175, 255, .18);
-            border-radius: 16px;
-            background: rgba(7, 11, 29, .72);
-            color: #fff;
-            font-size: 15px;
-            outline: none;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
-        }
-        .login-box input:focus { border-color: rgba(40, 230, 255, .55); box-shadow: 0 0 0 4px rgba(40,230,255,.08); }
-        .login-box button {
-            width: 100%;
-            min-height: 50px;
-            border: 0;
-            border-radius: 17px;
-            color: #06101f;
-            font-weight: 900;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            cursor: pointer;
-            background: linear-gradient(135deg, var(--cyan), #59a6ff 52%, var(--purple));
-            box-shadow: 0 18px 35px rgba(40, 230, 255, .22);
-        }
-
-        #mainPanel {
-            display: none;
-            width: min(100%, 430px);
-            margin: 0 auto;
-            min-height: calc(100vh - 24px);
-            flex-direction: column;
-            gap: 12px;
-            padding-bottom: 10px;
-        }
-
-        .app-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 4px 2px 0;
-        }
-        .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-        .brand-icon {
-            width: 38px; height: 38px; border-radius: 14px;
-            display: grid; place-items: center;
-            background: linear-gradient(135deg, rgba(40,230,255,.18), rgba(139,92,255,.18));
-            border: 1px solid rgba(40,230,255,.22);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
-        }
-        .brand-text strong {
-            display: block;
-            font-size: 13px;
-            letter-spacing: 1.6px;
-            text-transform: uppercase;
-            line-height: 1.1;
-        }
-        .brand-text span {
-            display: block;
-            margin-top: 3px;
-            color: var(--muted);
-            font-size: 11px;
-        }
-        .top-actions { display: flex; align-items: center; gap: 8px; }
-        .ready-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            min-height: 32px;
-            padding: 0 11px;
-            border-radius: 999px;
-            color: #bfffe5;
-            font-weight: 800;
-            font-size: 11px;
-            background: rgba(55, 242, 155, .1);
-            border: 1px solid rgba(55, 242, 155, .18);
-        }
-        .ready-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 14px var(--green); }
-
-        details.menu { position: relative; }
-        details.menu summary { list-style: none; cursor: pointer; }
-        details.menu summary::-webkit-details-marker { display: none; }
-        .menu-btn {
-            width: 38px; height: 38px; border-radius: 14px;
-            display: grid; place-items: center;
-            color: var(--text);
-            background: rgba(255,255,255,.055);
-            border: 1px solid rgba(255,255,255,.12);
-            font-size: 20px;
-            line-height: 1;
-        }
-        .menu-card {
-            position: absolute;
-            right: 0;
-            top: 44px;
-            width: 150px;
-            padding: 8px;
-            border-radius: 18px;
-            border: 1px solid rgba(255,255,255,.12);
-            background: rgba(8, 12, 30, .96);
-            box-shadow: 0 18px 42px rgba(0,0,0,.45);
-            z-index: 20;
-        }
-        .logout-btn {
-            width: 100%;
-            min-height: 38px;
-            border: 1px solid rgba(255, 77, 103, .36);
-            border-radius: 13px;
-            color: #ff8fa0;
-            background: rgba(255, 77, 103, .09);
-            cursor: pointer;
-            font-weight: 800;
-            font-size: 13px;
-        }
-
-        .panel {
-            position: relative;
-            overflow: hidden;
-            padding: 18px 18px 20px;
-            border-radius: 30px;
-            border: 1px solid rgba(40, 230, 255, .22);
-            background:
-                linear-gradient(180deg, rgba(29, 39, 82, .72), rgba(11, 16, 40, .86)),
-                rgba(8, 12, 32, .82);
-            box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.07);
-            backdrop-filter: blur(16px);
-        }
-        .panel::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background:
-                radial-gradient(circle at 15% 4%, rgba(40, 230, 255, .14), transparent 30%),
-                radial-gradient(circle at 94% 24%, rgba(255, 98, 199, .1), transparent 25%);
-        }
-        .panel > * { position: relative; z-index: 1; }
-
-        h2 {
-            margin: 0;
-            text-align: center;
-            font-size: 25px;
-            line-height: 1.1;
-            letter-spacing: 6px;
-            color: #fff;
-            text-transform: uppercase;
-            text-shadow: 0 0 22px rgba(40, 230, 255, .28);
-        }
-        .title-line {
-            width: 62px;
-            height: 4px;
-            margin: 15px auto 16px;
-            border-radius: 99px;
-            background: linear-gradient(90deg, var(--cyan), var(--purple), var(--pink));
-            box-shadow: 0 0 20px rgba(40, 230, 255, .35);
-        }
-
-        .timer-container {
-            margin-bottom: 17px;
-            padding: 18px 12px 17px;
-            text-align: center;
-            border-radius: 25px;
-            border: 1px solid rgba(40, 230, 255, .25);
-            background: linear-gradient(180deg, rgba(9, 15, 38, .76), rgba(8, 13, 33, .88));
-            box-shadow:
-                inset 0 1px 0 rgba(255,255,255,.05),
-                0 0 0 1px rgba(139, 92, 255, .08),
-                0 0 28px rgba(40, 230, 255, .08);
-        }
-        #statusText {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 7px;
-            margin-bottom: 8px;
-            color: #b8c2df;
-            font-size: 13px;
-            font-weight: 700;
-        }
-        #statusText::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 16px var(--green); flex: 0 0 auto; }
-        #timer {
-            font-size: clamp(39px, 12.5vw, 55px);
-            font-weight: 950;
-            line-height: 1;
-            letter-spacing: 5px;
-            color: var(--cyan);
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            text-shadow: 0 0 14px rgba(40, 230, 255, .55), 0 0 34px rgba(40, 230, 255, .22);
-        }
-
-        .progress-container {
-            display: none;
-            margin: -4px 0 16px;
-            padding: 12px;
-            border-radius: 18px;
-            border: 1px solid rgba(40, 230, 255, .18);
-            background: rgba(40, 230, 255, .07);
-        }
-        .progress-bar-bg {
-            height: 10px;
-            width: 100%;
-            border-radius: 999px;
-            overflow: hidden;
-            background: rgba(255,255,255,.08);
-            border: 1px solid rgba(255,255,255,.09);
-        }
-        .progress-bar-fill {
-            width: 0%;
-            height: 100%;
-            border-radius: inherit;
-            background: linear-gradient(90deg, var(--cyan), var(--blue), var(--purple));
-            transition: width .2s;
-            box-shadow: 0 0 18px rgba(40, 230, 255, .38);
-        }
-        #progressPercent { display: block; margin-top: 8px; color: #bbf7ff; font-size: 12px; font-weight: 800; }
-
-        .input-group { margin-bottom: 13px; }
-        label {
-            display: block;
-            margin: 0 0 7px;
-            color: #b4bdd9;
-            font-size: 13px;
-            font-weight: 850;
-            letter-spacing: .4px;
-        }
-        input, select {
-            width: 100%;
-            min-height: 50px;
-            padding: 0 15px;
-            border: 1px solid rgba(152, 169, 255, .18);
-            border-radius: 17px;
-            color: #fff;
-            font-size: 15px;
-            outline: none;
-            background: linear-gradient(180deg, rgba(9, 14, 35, .82), rgba(10, 14, 33, .96));
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 12px 28px rgba(0,0,0,.12);
-        }
-        input::placeholder { color: rgba(184, 194, 223, .55); }
-        input:focus, select:focus { border-color: rgba(40, 230, 255, .52); box-shadow: 0 0 0 4px rgba(40,230,255,.08), inset 0 1px 0 rgba(255,255,255,.05); }
-        select {
-            appearance: none;
-            -webkit-appearance: none;
-            cursor: pointer;
-            background-image:
-                linear-gradient(45deg, transparent 50%, var(--cyan) 50%),
-                linear-gradient(135deg, var(--cyan) 50%, transparent 50%),
-                linear-gradient(180deg, rgba(9, 14, 35, .82), rgba(10, 14, 33, .96));
-            background-position: calc(100% - 20px) 21px, calc(100% - 13px) 21px, 0 0;
-            background-size: 7px 7px, 7px 7px, 100% 100%;
-            background-repeat: no-repeat;
-            padding-right: 42px;
-        }
-        input[type="file"] {
-            padding: 13px 14px;
-            height: auto;
-            min-height: 50px;
-        }
-        input[type="file"]::file-selector-button {
-            border: 0;
-            border-radius: 12px;
-            margin-right: 10px;
-            padding: 9px 12px;
-            color: #06101f;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--cyan), var(--purple));
-        }
-        .hidden { display: none !important; }
-
-        .loop-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 2px 0 15px;
-            padding: 13px 14px;
-            border-radius: 18px;
-            cursor: pointer;
-            background: linear-gradient(135deg, rgba(40, 230, 255, .13), rgba(139, 92, 255, .08));
-            border: 1px solid rgba(40, 230, 255, .20);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
-        }
-        .loop-container input {
-            width: 24px;
-            height: 24px;
-            min-height: unset;
-            padding: 0;
-            margin: 0;
-            accent-color: var(--cyan);
-            cursor: pointer;
-            flex: 0 0 auto;
-        }
-        .loop-container label {
-            margin: 0;
-            color: #dbe6ff;
-            font-size: 15px;
-            font-weight: 900;
-            cursor: pointer;
-        }
-
-        #buttonArea {
-            position: sticky;
-            bottom: 10px;
-            z-index: 15;
-            margin-top: 17px;
-            padding-top: 2px;
-        }
-        .start-btn, .stop-btn {
-            width: 100%;
-            min-height: 58px;
-            border: 0;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 950;
-            letter-spacing: 1.2px;
-            text-transform: uppercase;
-            transition: transform .2s ease, filter .2s ease;
-        }
-        .start-btn {
-            color: #06101f;
-            background: linear-gradient(135deg, var(--cyan) 0%, #56a5ff 52%, var(--purple) 100%);
-            box-shadow: 0 18px 42px rgba(40, 230, 255, .24), inset 0 1px 0 rgba(255,255,255,.35);
-        }
-        .stop-btn {
-            color: white;
-            background: linear-gradient(135deg, #ff416c, #ff4b2b);
-            box-shadow: 0 18px 42px rgba(255, 75, 43, .25), inset 0 1px 0 rgba(255,255,255,.25);
-        }
-        .start-btn:active, .stop-btn:active { transform: scale(.985); }
-        .start-btn:disabled { opacity: .65; cursor: not-allowed; }
-
-        .secure-footer {
-            margin-top: 12px;
-            text-align: center;
-            color: rgba(180,189,217,.56);
-            font-size: 11px;
-            font-weight: 750;
-            letter-spacing: .8px;
-        }
-
-        @media (max-width: 380px) {
-            body { padding: 8px; }
-            #mainPanel { width: 100%; min-height: calc(100vh - 16px); gap: 9px; }
-            .panel { padding: 15px 14px 17px; border-radius: 26px; }
-            h2 { font-size: 22px; letter-spacing: 4px; }
-            .title-line { margin: 12px auto 14px; }
-            .timer-container { padding: 15px 10px; border-radius: 22px; }
-            input, select { min-height: 47px; border-radius: 15px; font-size: 14px; }
-            .input-group { margin-bottom: 11px; }
-            .start-btn, .stop-btn { min-height: 54px; border-radius: 18px; }
-            .ready-pill { display: none; }
-        }
-    </style>
+    /* Admin Panel */
+    .admin-section { margin-top: 30px; border-top: 2px solid var(--border); padding-top: 20px; }
+    .admin-card { background: rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; border: 1px solid var(--purple); }
+    .admin-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+    .admin-table th { text-align: left; color: var(--muted); padding: 10px; border-bottom: 1px solid var(--border); }
+    .admin-table td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .del-btn { background: var(--red); color: white; border: none; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 11px; }
+    .add-user-form { display: flex; gap: 10px; margin-bottom: 20px; }
+    .add-user-form input { flex: 1; min-height: 40px; padding: 0 10px; }
+    .add-user-btn { background: var(--green); color: #000; border: none; padding: 0 15px; border-radius: 12px; font-weight: 800; cursor: pointer; }
+  </style>
 </head>
 <body>
 
 <div id="loginPage">
-    <div class="login-box">
-        <h2>User Login</h2>
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
-        <button onclick="login()">Login</button>
+    <div class="login-shell">
+        <div class="login-box">
+            <div class="logo-badge">⚡</div>
+            <h1>Live Panel</h1>
+            <p class="login-subtitle">Premium Access Control</p>
+            <div class="form-field">
+                <label class="field-label">Username</label>
+                <input type="text" id="username" class="text-input" placeholder="Enter username">
+            </div>
+            <div class="form-field">
+                <label class="field-label">Password</label>
+                <input type="password" id="password" class="text-input" placeholder="Enter password">
+            </div>
+            <button class="login-btn" onclick="login()">Enter Dashboard</button>
+        </div>
     </div>
 </div>
 
 <div id="mainPanel">
-    <div class="app-top">
-        <div class="brand">
-            <div class="brand-icon">⚡</div>
-            <div class="brand-text">
-                <strong>Live Control</strong>
-                <span>Secure stream panel</span>
-            </div>
-        </div>
-        <div class="top-actions">
-            <div class="ready-pill">Ready</div>
-            <details class="menu">
-                <summary><span class="menu-btn">⋯</span></summary>
-                <div class="menu-card">
-                    <button class="logout-btn" onclick="logout()">Logout</button>
-                </div>
-            </details>
-        </div>
-    </div>
-
+    <button class="logout-btn" onclick="logout()">Logout</button>
     <div class="panel">
-        <h2>LIVE PANEL</h2>
-        <div class="title-line"></div>
-        <div class="timer-container">
-            <span id="statusText">Status: Ready to Stream</span>
+        <div class="hero"><h2>LIVE PANEL</h2></div>
+        <div class="timer-card">
+            <span id="statusText">Ready to Stream</span>
             <div id="timer">00:00:00</div>
         </div>
-        <div id="progressContainer" class="progress-container">
-            <div class="progress-bar-bg"><div id="progressFill" class="progress-bar-fill"></div></div>
-            <span id="progressPercent">Uploading... 0%</span>
+        <div id="progressBox" class="progress-box">
+            <div class="prog-bar"><div id="progFill" class="prog-bar-fill"></div></div>
+            <span id="progText">Uploading... 0% (0 MB)</span>
         </div>
-        <div class="input-group">
-            <label>Source Type</label>
-            <select id="sourceType" onchange="toggleSource()">
-                <option value="link">🔗 Video/YouTube/Dropbox Link</option>
-                <option value="file">📁 Upload Video File</option>
-            </select>
-        </div>
-        <div id="linkInput" class="input-group">
-            <label>Video URL:</label>
-            <input type="text" id="videoSource" placeholder="https://...">
-        </div>
-        <div id="fileInput" class="input-group hidden">
-            <label>Select Video File:</label>
-            <input type="file" id="videoFile" accept="video/*">
-        </div>
-        <div class="input-group">
-            <label>Live Mode (View Style)</label>
-            <select id="liveMode">
-                <option value="standard">📺 Standard (Horizontal 16:9)</option>
-                <option value="shorts">📱 Shorts (Vertical 9:16)</option>
-            </select>
-        </div>
-        <div class="loop-container">
-            <input type="checkbox" id="loopStream">
-            <label for="loopStream">🔄 Loop Video (24/7 Live)</label>
-        </div>
-        <div class="input-group">
-            <label>Target Platform</label>
-            <select id="platform">
-                <option value="rtmp://a.rtmp.youtube.com/live2">🔴 YouTube</option>
-                <option value="rtmps://live-api-s.facebook.com:443/rtmp/">🔵 Facebook</option>
-            </select>
-        </div>
-        <div class="input-group">
-            <label>Stream Key</label>
-            <input type="text" id="streamKey" placeholder="Enter stream key">
+        <div class="input-grid">
+            <div class="card">
+                <div class="card-title"><span>🎥</span> Source Type</div>
+                <select id="sourceType" onchange="toggleSource()">
+                    <option value="link">🔗 Video / Dropbox Link</option>
+                    <option value="file">📁 Upload Video File</option>
+                </select>
+            </div>
+            <div id="linkInput" class="card">
+                <div class="card-title"><span>🔗</span> Video URL</div>
+                <input type="text" id="videoSource" class="text-input" placeholder="https://dropbox.com/...">
+            </div>
+            <div id="fileInput" class="card hidden">
+                <div class="card-title"><span>📁</span> Select Video File</div>
+                <input type="file" id="videoFile" accept="video/*" style="color: var(--muted); font-size: 13px;">
+            </div>
+            <div class="card">
+                <div class="card-title"><span>📺</span> Live Mode</div>
+                <div class="mode-options">
+                    <div class="mode-opt active" id="optStd" onclick="setMode('standard')">Standard 16:9</div>
+                    <div class="mode-opt" id="optSho" onclick="setMode('shorts')">Shorts 9:16</div>
+                </div>
+                <input type="hidden" id="liveMode" value="standard">
+            </div>
+            <div class="card">
+                <div class="loop-wrap">
+                    <input type="checkbox" id="loopStream">
+                    <label for="loopStream">🔄 Loop Video (24/7 Live)</label>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title"><span>🔴</span> Target Platform</div>
+                <select id="platform">
+                    <option value="rtmp://a.rtmp.youtube.com/live2">YouTube</option>
+                    <option value="rtmps://live-api-s.facebook.com:443/rtmp/">Facebook</option>
+                </select>
+            </div>
+            <div class="card">
+                <div class="card-title"><span>🔑</span> Stream Key</div>
+                <input type="password" id="streamKey" class="text-input" placeholder="Enter your key...">
+            </div>
         </div>
         <div id="buttonArea">
             <button id="startBtn" class="start-btn" onclick="startStream()">Start Live Stream</button>
         </div>
-        <div class="secure-footer">SECURE LIVE PANEL • MOBILE READY</div>
+        <div id="adminPanel" class="admin-section hidden">
+            <div class="admin-card">
+                <h3 style="color:var(--cyan); text-align:center; margin-top:0;">Admin Control</h3>
+                <div class="add-user-form">
+                    <input type="text" id="newUserName" class="text-input" placeholder="User">
+                    <input type="text" id="newUserPass" class="text-input" placeholder="Pass">
+                    <button class="add-user-btn" onclick="addUser()">Add</button>
+                </div>
+                <table class="admin-table">
+                    <thead><tr><th>User</th><th>Live Time</th><th>Action</th></tr></thead>
+                    <tbody id="userList"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -553,37 +208,54 @@
 
     window.onload = async () => {
         if (sessionToken) showPanel();
+        checkSession();
         try {
-            const response = await fetch(`/status?token=${sessionToken}`);
-            const data = await response.json();
+            const res = await fetch(`/status?token=${sessionToken}`);
+            const data = await res.json();
             if (data.isActive && data.startTime) {
                 startTime = data.startTime;
-                document.getElementById('statusText').innerText = "Status: Live Stream Started!";
-                document.getElementById('buttonArea').innerHTML = `<button id="stopBtn" class="stop-btn" onclick="stopStream()">Stop Live Stream</button>`;
+                updateUI(true);
                 startSyncTimer();
             }
         } catch (e) {}
     };
 
+    async function checkSession() {
+        if (!sessionToken) return;
+        try {
+            const res = await fetch(`/status?token=${sessionToken}`);
+            if (res.status === 403) {
+                alert("আপনার অ্যাকাউন্ট ডিলেট করা হয়েছে!");
+                logout();
+            }
+        } catch (e) {}
+    }
+    setInterval(checkSession, 10000);
+
     async function login() {
         const user = document.getElementById('username').value;
         const pass = document.getElementById('password').value;
-        const response = await fetch('/login', {
+        const res = await fetch('/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user, pass })
         });
-        if (response.ok) {
-            const data = await response.json();
+        if (res.ok) {
+            const data = await res.json();
             localStorage.setItem('live_token', data.token);
             sessionToken = data.token;
             showPanel();
-        } else { alert("ভুল ইউজারনেম বা পাসওয়ার্ড!"); }
+            if(sessionToken === 'admin') loadUsers();
+        } else { alert("Wrong Username or Password!"); }
     }
 
     function showPanel() {
         document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('mainPanel').style.display = 'flex';
+        document.getElementById('mainPanel').style.display = 'block';
+        if(sessionToken === 'admin') {
+            document.getElementById('adminPanel').classList.remove('hidden');
+            loadUsers();
+        }
     }
 
     function logout() { localStorage.removeItem('live_token'); location.reload(); }
@@ -594,24 +266,34 @@
         document.getElementById('fileInput').classList.toggle('hidden', type === 'link');
     }
 
+    function setMode(m) {
+        document.getElementById('liveMode').value = m;
+        document.getElementById('optStd').classList.toggle('active', m === 'standard');
+        document.getElementById('optSho').classList.toggle('active', m === 'shorts');
+    }
+
+    function updateUI(isLive) {
+        document.getElementById('statusText').innerText = isLive ? "Status: Live Stream Started!" : "Status: Ready to Stream";
+        document.getElementById('buttonArea').innerHTML = isLive ? 
+            `<button id="stopBtn" class="stop-btn" onclick="stopStream()">Stop Live Stream</button>` : 
+            `<button id="startBtn" class="start-btn" onclick="startStream()">Start Live Stream</button>`;
+    }
+
     function startSyncTimer() {
         clearInterval(timerInterval);
         timerInterval = setInterval(() => {
-            const now = Date.now();
-            const diff = Math.floor((now - startTime) / 1000);
-            let h = Math.floor(diff / 3600);
-            let m = Math.floor((diff % 3600) / 60);
-            let s = diff % 60;
-            document.getElementById('timer').innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            const diff = Math.floor((Date.now() - startTime) / 1000);
+            const h = Math.floor(diff / 3600), m = Math.floor((diff % 3600) / 60), s = diff % 60;
+            document.getElementById('timer').innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }, 1000);
     }
 
     async function startStream() {
         const btn = document.getElementById('startBtn');
         const statusText = document.getElementById('statusText');
-        const progContainer = document.getElementById('progressContainer');
-        const progFill = document.getElementById('progressFill');
-        const progPercent = document.getElementById('progressPercent');
+        const progBox = document.getElementById('progressBox');
+        const progFill = document.getElementById('progFill');
+        const progText = document.getElementById('progText');
         const btnArea = document.getElementById('buttonArea');
         
         const type = document.getElementById('sourceType').value;
@@ -620,79 +302,102 @@
         const loop = document.getElementById('loopStream').checked;
         const mode = document.getElementById('liveMode').value;
 
-        if (!key) { alert("স্ট্রিম কি বসান!"); return; }
+        if (!key) { alert("Stream Key missing!"); return; }
 
-        const formData = new FormData();
-        formData.append('type', type);
-        formData.append('platform', platform);
-        formData.append('key', key);
-        formData.append('loop', loop);
-        formData.append('mode', mode);
-        formData.append('token', sessionToken);
+        const fd = new FormData();
+        fd.append('type', type); fd.append('platform', platform); fd.append('key', key);
+        fd.append('loop', loop); fd.append('mode', mode); fd.append('token', sessionToken);
 
-        if (type === 'link') {
-            formData.append('source', document.getElementById('videoSource').value);
-        } else {
+        if (type === 'link') fd.append('source', document.getElementById('videoSource').value);
+        else {
             const file = document.getElementById('videoFile').files[0];
-            if (!file) { alert("ভিডিও ফাইল সিলেক্ট করুন!"); return; }
-            formData.append('videoFile', file);
+            if (!file) { alert("Select a file!"); return; }
+            fd.append('videoFile', file);
         }
 
-        btn.innerText = "CONNECTING...";
-        btn.disabled = true;
-        statusText.innerText = "Status: Processing...";
+        btn.innerText = "Connecting..."; btn.disabled = true;
+        statusText.innerText = "Processing...";
 
         const xhr = new XMLHttpRequest();
         xhr.upload.onprogress = (e) => {
             if (e.lengthComputable) {
                 const p = Math.round((e.loaded / e.total) * 100);
-                progContainer.style.display = 'block';
+                const mbL = (e.loaded / (1024*1024)).toFixed(1);
+                const mbT = (e.total / (1024*1024)).toFixed(1);
+                progBox.style.display = 'block';
                 progFill.style.width = p + '%';
-                progPercent.innerText = `Uploading... ${p}%`;
-                statusText.innerText = `Status: Uploading ${p}%`;
+                progText.innerText = `Uploading... ${p}% (${mbL}MB / ${mbT}MB)`;
+                statusText.innerText = `Uploading... ${p}%`;
             }
         };
 
         xhr.onload = () => {
             if (xhr.status === 200) {
-                alert("লাইভ শুরু হয়েছে!");
-                statusText.innerText = "Status: Live Stream Started!";
-                fetch(`/status?token=${sessionToken}`).then(res => res.json()).then(data => {
-                    startTime = data.startTime;
-                    startSyncTimer();
+                alert("Live Started!");
+                updateUI(true);
+                fetch(`/status?token=${sessionToken}`).then(r => r.json()).then(d => {
+                    startTime = d.startTime; startSyncTimer();
                 });
-                btnArea.innerHTML = `<button id="stopBtn" class="stop-btn" onclick="stopStream()">Stop Live Stream</button>`;
             } else {
-                alert("সার্ভার এরর!");
-                statusText.innerText = "Status: Error Occurred";
-                btn.innerText = "Start Live Stream";
-                btn.disabled = false;
+                alert("Server Error!");
+                btn.innerText = "Start Live Stream"; btn.disabled = false;
             }
-            setTimeout(() => { progContainer.style.display = 'none'; }, 3000);
+            setTimeout(() => progBox.style.display = 'none', 3000);
         };
 
         xhr.open('POST', '/start-stream', true);
-        xhr.send(formData);
+        xhr.send(fd);
     }
 
     async function stopStream() {
-        const statusText = document.getElementById('statusText');
-        const btnArea = document.getElementById('buttonArea');
-        if(!confirm("বন্ধ করতে চান?")) return;
+        if(!confirm("Stop Live?")) return;
         try {
-            const response = await fetch('/stop-stream', { 
+            const res = await fetch('/stop-stream', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token: sessionToken })
             });
-            if(response.ok) {
-                alert("বন্ধ হয়েছে!");
-                statusText.innerText = "Status: Ready to Stream";
+            if (res.ok) {
+                alert("Stopped!");
+                updateUI(false);
                 clearInterval(timerInterval);
                 document.getElementById('timer').innerText = "00:00:00";
-                btnArea.innerHTML = `<button id="startBtn" class="start-btn" onclick="startStream()">Start Live Stream</button>`;
             }
         } catch (e) { alert("Error!"); }
+    }
+
+    async function loadUsers() {
+        const res = await fetch('/admin/users');
+        const users = await res.json();
+        const list = document.getElementById('userList');
+        list.innerHTML = '';
+        for (let u in users) {
+            const time = users[u].totalTime || 0;
+            const mins = Math.floor(time / 60000);
+            list.innerHTML += `<tr><td>${u}</td><td>${mins} min</td><td><button class="del-btn" onclick="deleteUser('${u}')">Delete</button></td></tr>`;
+        }
+    }
+
+    async function addUser() {
+        const user = document.getElementById('newUserName').value;
+        const pass = document.getElementById('newUserPass').value;
+        if(!user || !pass) return alert("Fill all fields!");
+        const res = await fetch('/admin/add-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user, pass, token: sessionToken })
+        });
+        if(res.ok) { alert("User Added!"); loadUsers(); }
+    }
+
+    async function deleteUser(user) {
+        if(!confirm(`Delete ${user}?`)) return;
+        const res = await fetch('/admin/delete-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user, token: sessionToken })
+        });
+        if(res.ok) { alert("Deleted!"); loadUsers(); }
     }
 </script>
 </body>
