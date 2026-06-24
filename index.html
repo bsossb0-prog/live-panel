@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Premium Live Control Center</title>
+  <style>
+    :root {
+      --bg: #040816;
+      --card: rgba(10, 16, 40, 0.78);
+      --card2: rgba(18, 26, 56, 0.72);
+      --line: rgba(76, 217, 255, 0.26);
+      --text: #f6f8ff;
+      --muted: #9eabd1;
+      --cyan: #35e8ff;
+      --blue: #4a7dff;
+      --purple: #bc52ff;
+      --pink: #ff5cbc;
+      --green: #3ef2a2;
+      --red: #ff5b77;
+      --orange: #ffb24b;
+      --shadow: 0 22px 60px rgba(0, 0, 0, .5);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 6%, rgba(188, 82, 255, .22), transparent 30%),
+        radial-gradient(circle at 85% 18%, rgba(53, 232, 255, .13), transparent 24%),
+        linear-gradient(150deg, #02050e 0%, #07112d 48%, #020714 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+      overflow-x: hidden;
+    }
+
+    button, input, select { font-family: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+    .hidden { display: none !important; }
+
+    #loginPage {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      background: rgba(3, 4, 12, .93);
+      backdrop-filter: blur(20px);
+      padding: 18px;
+    }
+
+    .login-card {
+      width: min(430px, 100%);
+      min-height: 520px;
+      border: 2px solid var(--cyan);
+      border-radius: 34px;
+      padding: 34px 26px;
+      background: rgba(0,0,0,.82);
+      box-shadow: 0 0 30px rgba(53,232,255,.55), 0 0 65px rgba(255,0,255,.44), inset 0 0 24px rgba(53,232,255,.16);
+      text-align: center;
+    }
+    .login-top {
+      font-weight: 900;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      color: white;
+      text-shadow: 0 0 14px var(--cyan);
+      margin: 14px 0 22px;
+    }
+    .login-card h1 {
+      margin: 0;
+      font-size: clamp(34px, 8vw, 48px);
+      line-height: 1.05;
+      background: linear-gradient(90deg, #fff, #45ecff, #ff64d0);
+      -webkit-background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 34px rgba(53,232,255,.25);
+    }
+    .login-card p { margin: 12px 0 28px; color: #c8d0e8; font-size: 18px; }
+    .login-input {
+      width: 100%;
+      min-height: 64px;
+      border-radius: 999px;
+      border: 1.6px solid var(--cyan);
+      background: rgba(0,0,0,.56);
+      color: #fff;
+      outline: none;
+      padding: 0 26px;
+      margin-bottom: 18px;
+      font-size: 18px;
+      box-shadow: inset 0 0 18px rgba(53,232,255,.16), 0 0 20px rgba(53,232,255,.12);
+    }
+    .login-btn {
+      width: 100%;
+      min-height: 66px;
+      border: none;
+      border-radius: 999px;
+      margin-top: 10px;
+      background: linear-gradient(90deg, #ff00d4, #7b63ff, #28e7ff);
+      color: #fff;
+      font-weight: 1000;
+      font-size: 20px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 0 30px rgba(53,232,255,.48);
+    }
+
+    #mainPanel { display: none; width: min(100%, 640px); position: relative; }
+    .user-menu { position: fixed; top: 16px; left: 16px; z-index: 80; }
+    .menu-btn {
+      width: 58px; height: 58px;
+      border-radius: 18px;
+      border: 1px solid rgba(53,232,255,.42);
+      background: rgba(9,16,38,.74);
+      box-shadow: 0 0 22px rgba(53,232,255,.18);
+      display: grid;
+      place-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .menu-btn span { display: block; width: 28px; height: 3px; border-radius: 4px; background: var(--cyan); }
+    .user-dropdown {
+      display: none;
+      position: absolute;
+      top: 70px; left: 0;
+      width: min(320px, calc(100vw - 32px));
+      padding: 16px;
+      border-radius: 24px;
+      border: 1px solid rgba(53,232,255,.24);
+      background: rgba(4,8,22,.96);
+      box-shadow: var(--shadow), 0 0 40px rgba(188,82,255,.25);
+      backdrop-filter: blur(18px);
+    }
+    .user-dropdown.show { display: block; }
+    .profile-row { display: flex; gap: 12px; align-items: center; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .avatar { width: 46px; height: 46px; border-radius: 16px; background: linear-gradient(135deg, #172b63, #682bd3); display: grid; place-items: center; font-size: 22px; }
+    .online { color: var(--green); font-size: 13px; font-weight: 800; }
+    .menu-stat { display: flex; justify-content: space-between; gap: 10px; margin-top: 12px; font-size: 13px; color: #c7d2f2; }
+    .menu-stat b { color: var(--cyan); }
+    .menu-item, .menu-logout {
+      width: 100%; margin-top: 12px; padding: 12px 13px; border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.04); color: white;
+      display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+    }
+    .menu-logout { justify-content: center; color: var(--red); border-color: rgba(255,91,119,.28); background: rgba(255,91,119,.08); font-weight: 900; }
+
+    .panel {
+      width: 100%;
+      border-radius: 34px;
+      border: 1px solid rgba(53,232,255,.18);
+      background: linear-gradient(180deg, rgba(10,17,42,.92), rgba(6,12,30,.88));
+      box-shadow: var(--shadow);
+      padding: 26px;
+      margin: 70px auto 20px;
+    }
+    .hero { text-align: center; margin-bottom: 22px; }
+    .hero h2 { margin: 0; font-size: 34px; color: var(--cyan); letter-spacing: 2px; text-transform: uppercase; }
+    .timer-card {
+      padding: 22px;
+      border-radius: 24px;
+      border: 1px solid rgba(53,232,255,.3);
+      background: rgba(53,232,255,.06);
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    #statusText { display: block; color: var(--green); font-weight: 900; margin-bottom: 10px; }
+    #timer { font: 900 48px/1 monospace; text-shadow: 0 0 18px var(--cyan); }
+    .limit-strip {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .limit-chip {
+      border: 1px solid rgba(53,232,255,.2);
+      background: rgba(255,255,255,.035);
+      border-radius: 16px;
+      padding: 13px;
+      color: #c6d2ef;
+      font-size: 13px;
+    }
+    .limit-chip b { display: block; color: var(--cyan); font-size: 20px; margin-top: 5px; }
+    .input-grid { display: grid; gap: 14px; }
+    .card, .admin-card {
+      border-radius: 22px;
+      border: 1px solid rgba(135,160,255,.14);
+      background: rgba(255,255,255,.035);
+      padding: 16px;
+    }
+    .card-title { color: #aebce5; font-weight: 900; margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
+    .text-input, select {
+      width: 100%;
+      min-height: 52px;
+      border-radius: 14px;
+      border: 1px solid rgba(135,160,255,.22);
+      background: #090f24;
+      color: #fff;
+      outline: none;
+      padding: 0 14px;
+      font-size: 15px;
+    }
+    .mode-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .mode-opt { padding: 13px; border-radius: 14px; border: 1px solid rgba(135,160,255,.2); background: rgba(255,255,255,.035); text-align: center; cursor: pointer; font-weight: 800; }
+    .mode-opt.active { background: linear-gradient(90deg, #247dff, #a64dff); border-color: var(--cyan); box-shadow: 0 0 16px rgba(53,232,255,.25); }
+    .loop-wrap { display: flex; align-items: center; gap: 12px; color: var(--cyan); font-weight: 900; }
+    .loop-wrap input { width: 20px; height: 20px; accent-color: var(--cyan); }
+    .progress-box { display: none; margin: 16px 0; padding: 14px; border-radius: 16px; background: rgba(0,0,0,.3); text-align: center; }
+    .prog-bar { height: 10px; border-radius: 12px; background: rgba(255,255,255,.1); overflow: hidden; margin: 10px 0; }
+    #progFill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--cyan), var(--purple)); }
+    .start-btn, .stop-btn {
+      width: 100%; min-height: 64px; margin-top: 20px; border: 0; border-radius: 20px; cursor: pointer;
+      font-weight: 1000; font-size: 18px; text-transform: uppercase;
+    }
+    .start-btn { background: linear-gradient(90deg, var(--cyan), var(--purple)); color: #071022; box-shadow: 0 12px 28px rgba(53,232,255,.28); }
+    .stop-btn { background: linear-gradient(90deg, #ff493e, #c41452); color: white; }
+
+    /* Admin */
+    body.admin-mode { align-items: flex-start; padding: 10px; }
+    body.admin-mode #mainPanel { width: min(100%, 920px); }
+    body.admin-mode .panel { margin-top: 58px; padding: 0; border: 0; background: transparent; box-shadow: none; }
+    body.admin-mode .hero, body.admin-mode .timer-card, body.admin-mode .limit-strip, body.admin-mode .progress-box, body.admin-mode .input-grid, body.admin-mode #buttonArea { display: none !important; }
+    .admin-section { display: none; }
+    body.admin-mode .admin-section { display: block; }
+    .admin-shell {
+      border: 1px solid rgba(53,232,255,.22);
+      border-radius: 32px;
+      background: linear-gradient(180deg, rgba(12,18,43,.92), rgba(5,10,25,.88));
+      box-shadow: var(--shadow);
+      padding: 18px;
+      width: 100%;
+    }
+    .admin-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; }
+    .admin-brand { display: flex; align-items: center; gap: 12px; }
+    .admin-logo { width: 58px; height: 58px; border-radius: 18px; display: grid; place-items: center; font-size: 30px; border: 1px solid rgba(53,232,255,.3); background: linear-gradient(135deg, rgba(188,82,255,.35), rgba(53,232,255,.1)); }
+    .admin-brand h3 { margin: 0; font-size: 30px; line-height: 1; text-transform: uppercase; background: linear-gradient(90deg, var(--cyan), var(--pink)); -webkit-background-clip: text; color: transparent; }
+    .admin-brand p { margin: 6px 0 0; color: #cbd5f4; letter-spacing: 5px; font-size: 13px; font-weight: 900; text-transform: uppercase; }
+    .admin-online { border: 1px solid rgba(135,160,255,.18); background: rgba(255,255,255,.04); border-radius: 999px; padding: 10px 14px; font-weight: 900; white-space: nowrap; }
+    .admin-online span { display: inline-block; width: 11px; height: 11px; background: var(--green); border-radius: 50%; margin-right: 7px; box-shadow: 0 0 12px var(--green); }
+    .admin-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .admin-metric { min-height: 142px; border: 1px solid rgba(135,160,255,.16); border-radius: 22px; padding: 15px; background: rgba(255,255,255,.035); cursor: pointer; position: relative; overflow: hidden; }
+    .admin-metric::after { content:""; position: absolute; right: 18px; bottom: 18px; width: 120px; height: 2px; background: linear-gradient(90deg, transparent, var(--cyan)); opacity: .5; transform: skewX(-22deg); }
+    .admin-metric.active { border-color: var(--cyan); box-shadow: 0 0 20px rgba(53,232,255,.18); }
+    .metric-icon { width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; font-size: 26px; background: rgba(0,153,255,.13); margin-bottom: 12px; }
+    .metric-label { color: #dbe3ff; font-weight: 900; }
+    .metric-value { font-size: 36px; font-weight: 1000; margin: 8px 0; }
+    .metric-note { color: var(--green); font-weight: 900; font-size: 14px; }
+    .admin-card { margin-top: 16px; border-color: rgba(53,232,255,.22); padding: 18px; }
+    .admin-card-title { display: flex; align-items: center; gap: 12px; font-size: 26px; font-weight: 1000; text-transform: uppercase; background: linear-gradient(90deg, var(--pink), var(--cyan)); -webkit-background-clip: text; color: transparent; }
+    .admin-details-head { display: flex; justify-content: space-between; gap: 10px; color: #b8c4e7; border-top: 1px solid rgba(255,255,255,.08); padding-top: 13px; margin-top: 14px; }
+    .admin-details-note { color: var(--green); font-weight: 900; }
+    .add-user-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+    .limit-row { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .limit-toggle { min-height: 50px; border-radius: 14px; border: 1px solid rgba(135,160,255,.18); color: #dce6ff; background: rgba(255,255,255,.04); cursor: pointer; font-weight: 900; }
+    .limit-toggle.active { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 16px rgba(53,232,255,.18); }
+    #newLimitMinutes { grid-column: 1 / -1; }
+    .add-user-btn { grid-column: 1 / -1; min-height: 56px; border: 0; border-radius: 16px; background: linear-gradient(90deg, var(--green), var(--cyan)); color: #05101c; font-size: 18px; font-weight: 1000; cursor: pointer; }
+    .user-list { display: grid; gap: 12px; margin-top: 15px; }
+    .user-card { border: 1px solid rgba(135,160,255,.13); background: rgba(255,255,255,.035); border-radius: 18px; padding: 14px; }
+    .user-card-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .user-name { font-size: 20px; font-weight: 1000; }
+    .badge { padding: 7px 10px; border-radius: 999px; font-size: 12px; font-weight: 1000; border: 1px solid rgba(53,232,255,.22); color: var(--cyan); background: rgba(53,232,255,.09); }
+    .badge.live { color: var(--green); border-color: rgba(62,242,162,.3); background: rgba(62,242,162,.1); }
+    .badge.expired { color: var(--red); border-color: rgba(255,91,119,.35); background: rgba(255,91,119,.1); }
+    .user-info { display: grid; gap: 7px; color: #b9c5e7; margin-top: 12px; font-size: 14px; }
+    .user-info b { color: white; }
+    .remaining-good { color: var(--green) !important; }
+    .remaining-expired { color: var(--red) !important; }
+    .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 13px; }
+    .mini-btn { min-height: 42px; border-radius: 13px; border: 1px solid rgba(135,160,255,.18); background: rgba(255,255,255,.04); color: #dbe5ff; font-weight: 900; cursor: pointer; }
+    .mini-btn.blue { color: var(--cyan); border-color: rgba(53,232,255,.32); }
+    .mini-btn.orange { color: var(--orange); border-color: rgba(255,178,75,.32); }
+    .mini-btn.red { color: var(--red); border-color: rgba(255,91,119,.32); }
+    .mini-btn.green { color: var(--green); border-color: rgba(62,242,162,.32); }
+    .key-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .copy-key-btn { min-height: 30px; padding: 4px 10px; border-radius: 10px; border: 1px solid rgba(53,232,255,.35); background: rgba(53,232,255,.08); color: var(--cyan); font-size: 12px; font-weight: 900; cursor: pointer; }
+    .copy-key-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .bottom-nav {
+      position: sticky; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+      margin-top: 16px; padding: 8px; border-radius: 18px; background: rgba(3,7,18,.88); border: 1px solid rgba(135,160,255,.12); backdrop-filter: blur(16px);
+    }
+    .bottom-nav button { border: 0; background: transparent; color: #b6c2e3; padding: 10px 4px; border-radius: 12px; font-weight: 800; cursor: pointer; }
+    .bottom-nav button.active { color: var(--pink); background: rgba(188,82,255,.12); }
+
+    .admin-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 16px; padding: 14px; border-radius: 18px; border: 1px solid rgba(135,160,255,.16); background: rgba(255,255,255,.035); color: #c4d0ee; }
+    .admin-footer b { color: var(--green); }
+
+    /* Mobile typing fix: keyboard/bottom nav should not cut input fields */
+    body.admin-mode .admin-shell { padding-bottom: 96px; }
+    input, select, textarea { font-size: 16px !important; }
+    #adminDetailsContent { scroll-margin-bottom: 170px; }
+    .text-input:focus { scroll-margin-bottom: 180px; }
+    .admin-hidden-pass { color: var(--muted) !important; letter-spacing: .5px; }
+    .admin-footer button { border: 1px solid rgba(255,91,119,.35); background: rgba(255,91,119,.08); color: var(--red); border-radius: 14px; padding: 11px 14px; font-weight: 1000; cursor: pointer; }
+
+    .notice-overlay { display: none; position: fixed; inset: 0; z-index: 2000; place-items: center; padding: 18px; background: rgba(1,4,13,.72); backdrop-filter: blur(10px); }
+    .notice-overlay.show { display: grid; }
+    .notice-card { width: min(470px, 100%); border-radius: 30px; border: 2px solid var(--pink); background: linear-gradient(160deg, rgba(6,13,35,.98), rgba(34,7,46,.95)); box-shadow: 0 0 28px rgba(53,232,255,.5), 0 0 55px rgba(255,92,188,.42); padding: 28px 22px; text-align: center; }
+    .notice-label { letter-spacing: 7px; color: #dfe7ff; font-weight: 900; margin-bottom: 15px; }
+    .notice-icon { font-size: 64px; color: var(--pink); text-shadow: 0 0 24px var(--pink); }
+    .notice-card h2 { font-size: 32px; margin: 10px 0; background: linear-gradient(90deg, #fff, var(--cyan), var(--pink)); -webkit-background-clip: text; color: transparent; }
+    .notice-card p { color: #cdd7f3; font-size: 17px; line-height: 1.5; }
+    .notice-time { margin: 18px 0; border: 1px solid rgba(53,232,255,.24); border-radius: 18px; padding: 14px; color: var(--cyan); font-size: 26px; font-weight: 1000; }
+    .notice-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .notice-actions button { min-height: 54px; border-radius: 16px; border: 1px solid rgba(53,232,255,.28); background: linear-gradient(90deg, var(--cyan), var(--blue)); color: white; font-size: 16px; font-weight: 1000; cursor: pointer; }
+    .notice-actions .outline { background: rgba(255,92,188,.12); border-color: rgba(255,92,188,.4); }
+
+    @media (max-width: 520px) {
+      body { padding: 10px; }
+      #mainPanel { width: 100%; }
+      .panel { padding: 18px; border-radius: 28px; margin-top: 72px; }
+      .hero h2 { font-size: 28px; }
+      #timer { font-size: 40px; }
+      .admin-shell { padding: 14px; border-radius: 26px; }
+      .admin-brand h3 { font-size: 27px; }
+      .admin-brand p { letter-spacing: 4px; font-size: 12px; }
+      .admin-online { padding: 9px 10px; font-size: 13px; }
+      .admin-metrics { gap: 10px; }
+      .admin-metric { min-height: 132px; padding: 12px; }
+      .metric-value { font-size: 31px; }
+      .admin-card-title { font-size: 22px; }
+      .add-user-form { grid-template-columns: 1fr; }
+      .limit-row { grid-template-columns: 1fr 1fr; }
+      .action-grid { grid-template-columns: 1fr 1fr; }
+      .admin-footer { flex-direction: column; align-items: stretch; }
+      .admin-footer button { width: 100%; }
+      .notice-actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="loginPage">
+    <div class="login-card">
+      <div class="login-top">LOGIN</div>
+      <h1>STREAM ACCESS</h1>
+      <p>Login to Start Control</p>
+      <input class="login-input" id="username" placeholder="Username" autocomplete="username" />
+      <input class="login-input" id="password" type="password" placeholder="Password" autocomplete="current-password" />
+      <button class="login-btn" onclick="login()">Sign In</button>
+    </div>
+  </div>
+
+  <div id="mainPanel">
+    <div class="user-menu">
+      <button class="menu-btn" onclick="toggleUserMenu()"><span></span><span></span><span></span></button>
+      <div id="userDropdown" class="user-dropdown">
+        <div class="profile-row">
+          <div class="avatar">👤</div>
+          <div><b id="menuUserName">User</b><div class="online">● Online</div></div>
+        </div>
+        <div class="menu-stat"><span>Total Live Time</span><b id="menuLiveTime">00:00:00</b></div>
+        <div class="menu-stat"><span>Remaining Time</span><b id="menuRemainTime">Unlimited</b></div>
+        <div class="menu-stat"><span>Account Status</span><b id="menuAccountStatus">Active</b></div>
+        <button class="menu-item" onclick="changePassword()"><span>🔒 Change Password</span><span>›</span></button>
+        <button class="menu-item" onclick="toggleStreamKey()"><span>👁 Show/Hide Stream Key</span><span>›</span></button>
+        <button class="menu-item" onclick="contactAdmin()"><span>☎ Contact Admin</span><span>›</span></button>
+        <button class="menu-logout" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hero"><h2>LIVE PANEL</h2></div>
+      <div class="timer-card">
+        <span id="statusText">Ready to Stream</span>
+        <div id="timer">00:00:00</div>
+      </div>
+      <div class="limit-strip">
+        <div class="limit-chip">Limit Type <b id="userLimitType">Unlimited</b></div>
+        <div class="limit-chip">Remaining <b id="userRemaining">Unlimited</b></div>
+      </div>
+      <div id="progressBox" class="progress-box">
+        <div class="prog-bar"><div id="progFill"></div></div>
+        <span id="progText">Uploading... 0% (0 MB / 0 MB)</span>
+      </div>
+      <div class="input-grid">
+        <div class="card"><div class="card-title">🎥 Source Type</div><select id="sourceType" onchange="toggleSource()"><option value="link">🔗 Video / Dropbox Link</option><option value="file">📁 Upload Video File</option></select></div>
+        <div id="linkInput" class="card"><div class="card-title">🔗 Video URL</div><input type="text" id="videoSource" class="text-input" placeholder="https://dropbox.com/..."></div>
+        <div id="fileInput" class="card hidden"><div class="card-title">📁 Select Video File</div><input type="file" id="videoFile" accept="video/*" style="color:var(--muted);"></div>
+        <div class="card"><div class="card-title">📺 Live Mode</div><div class="mode-options"><div class="mode-opt active" id="optStd" onclick="setMode('standard')">Standard 16:9</div><div class="mode-opt" id="optSho" onclick="setMode('shorts')">Shorts 9:16</div></div><input type="hidden" id="liveMode" value="standard"></div>
+        <div class="card"><div class="loop-wrap"><input type="checkbox" id="loopStream"><label for="loopStream">🔄 Loop Video (24/7 Live)</label></div></div>
+        <div class="card"><div class="card-title">🔴 Target Platform</div><select id="platform"><option value="rtmp://a.rtmp.youtube.com/live2">YouTube</option><option value="rtmps://live-api-s.facebook.com:443/rtmp/">Facebook</option></select></div>
+        <div class="card"><div class="card-title">🔑 Stream Key</div><input type="password" id="streamKey" class="text-input" placeholder="Enter your key..."></div>
+      </div>
+      <div id="buttonArea"><button id="startBtn" class="start-btn" onclick="startStream()">Start Live Stream</button></div>
+
+      <div id="adminPanel" class="admin-section">
+        <div class="admin-shell">
+          <div class="admin-top">
+            <div class="admin-brand"><div class="admin-logo">♛</div><div><h3>Live Panel</h3><p>Admin Control</p></div></div>
+            <div class="admin-online"><span></span>Super Admin</div>
+          </div>
+          <div class="admin-metrics">
+            <div class="admin-metric active" id="metricUsers" onclick="showAdminUsers()"><div class="metric-icon">👥</div><div class="metric-label">Total Users</div><div class="metric-value" id="adminTotalUsers">0</div><div class="metric-note">+ Active panel</div></div>
+            <div class="admin-metric" id="metricLive" onclick="showAdminLiveNow()"><div class="metric-icon">📡</div><div class="metric-label">Live Now</div><div class="metric-value" id="adminLiveNow">0</div><div class="metric-note">Realtime status</div></div>
+            <div class="admin-metric" id="metricUnlimited" onclick="showAdminUsers('unlimited')"><div class="metric-icon">∞</div><div class="metric-label">Unlimited</div><div class="metric-value" id="adminUnlimited">0</div><div class="metric-note">No time limit</div></div>
+            <div class="admin-metric" id="metricLimited" onclick="showAdminUsers('limited')"><div class="metric-icon">⏱</div><div class="metric-label">Limited</div><div class="metric-value" id="adminLimited">0</div><div class="metric-note">Auto stop enabled</div></div>
+          </div>
+          <div class="admin-card" id="adminDetailsCard">
+            <div class="admin-card-title"><span id="adminDetailsIcon">👥</span><strong id="adminDetailsTitle">Users Manager</strong></div>
+            <div class="admin-details-head"><span id="adminDetailsSubtitle">Add user, limit, edit password, end live</span><span class="admin-details-note">Tap cards above</span></div>
+            <div id="adminDetailsContent"></div>
+          </div>
+          <div class="admin-footer"><span>🛡 You are logged in as <b>Super Admin</b></span><button onclick="logout()">Logout ➜</button></div>
+          <div class="bottom-nav">
+            <button class="active" onclick="showAdminUsers()">Dashboard</button>
+            <button onclick="showAdminUsers()">Users</button>
+            <button onclick="showAdminLiveNow()">Live Now</button>
+            <button onclick="showAdminSettings()">Settings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="limitNotice" class="notice-overlay">
+    <div class="notice-card">
+      <div class="notice-label">LIVE NOTICE</div>
+      <div class="notice-icon">⚠</div>
+      <h2>Live Limit Finished</h2>
+      <p>Your live time has ended.<br>The stream was stopped automatically.</p>
+      <div class="notice-time">Remaining Time: 00:00:00</div>
+      <div class="notice-actions"><button onclick="hideLimitNotice()">OK ›</button><button class="outline" onclick="contactAdmin()">🎧 Contact Admin</button></div>
+    </div>
+  </div>
+
+<script>
+let timerInterval = null;
+let statusPoll = null;
+let adminPoll = null;
+let startTime = null;
+let sessionToken = localStorage.getItem('live_token');
+let currentUserName = localStorage.getItem('live_user') || 'User';
+let adminUsersCache = {};
+function visibleAdminUsers(){ return Object.keys(adminUsersCache).filter(u => String(u).toLowerCase() !== 'admin'); }
+let activeAdminFilter = 'all';
+let selectedLimitType = 'unlimited';
+let lastLimitNotice = false;
+let latestRemainingMs = null;
+let remainingBaseAt = 0;
+
+function $(id){ return document.getElementById(id); }
+function safeText(v){ return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+function safeArg(v){ return String(v ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' '); }
+function formatMs(ms){
+  if (ms === null || ms === undefined) return 'Unlimited';
+  const sec = Math.max(0, Math.floor(Number(ms) / 1000));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function totalToText(ms){
+  const sec = Math.max(0, Math.floor(Number(ms || 0) / 1000));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return h ? `${h} h ${m} m ${s} s` : `${m} m ${s} s`;
+}
+
+function getCurrentRemainingMs(){
+  if (latestRemainingMs === null) return null;
+  if (!startTime) return Math.max(0, Number(latestRemainingMs || 0));
+  return Math.max(0, Number(latestRemainingMs || 0) - (Date.now() - remainingBaseAt));
+}
+function updateRemainingDisplays(){
+  const val = latestRemainingMs === null ? 'Unlimited' : formatMs(getCurrentRemainingMs());
+  if ($('menuRemainTime')) $('menuRemainTime').innerText = val;
+  if ($('userRemaining')) $('userRemaining').innerText = val;
+}
+function toggleUserMenu(){ $('userDropdown').classList.toggle('show'); }
+function contactAdmin(){ window.open('https://wa.me/8801751221828', '_blank'); }
+function hideLimitNotice(){ $('limitNotice').classList.remove('show'); }
+function showLimitNotice(){ $('limitNotice').classList.add('show'); }
+function logout(){ localStorage.removeItem('live_token'); localStorage.removeItem('live_user'); location.reload(); }
+
+async function login(){
+  const user = $('username').value.trim();
+  const pass = $('password').value;
+  if (!user || !pass) return alert('Username/password দিন');
+  const res = await fetch('/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user, pass}) });
+  if (!res.ok) return alert('Wrong Username or Password!');
+  const data = await res.json();
+  sessionToken = data.token;
+  currentUserName = data.user || user;
+  localStorage.setItem('live_token', sessionToken);
+  localStorage.setItem('live_user', currentUserName);
+  showPanel();
+}
+
+function showPanel(){
+  $('loginPage').style.display = 'none';
+  $('mainPanel').style.display = 'block';
+  $('menuUserName').innerText = currentUserName;
+  if (sessionToken === 'admin') {
+    document.body.classList.add('admin-mode');
+    loadUsers();
+    clearInterval(adminPoll);
+    adminPoll = setInterval(loadUsers, 5000);
+  } else {
+    document.body.classList.remove('admin-mode');
+    refreshStatus();
+    clearInterval(statusPoll);
+    statusPoll = setInterval(refreshStatus, 5000);
+  }
+}
+
+window.onload = () => { if (sessionToken) showPanel(); };
+
+function toggleSource(){
+  const type = $('sourceType').value;
+  $('linkInput').classList.toggle('hidden', type === 'file');
+  $('fileInput').classList.toggle('hidden', type === 'link');
+}
+function setMode(m){
+  $('liveMode').value = m;
+  $('optStd').classList.toggle('active', m === 'standard');
+  $('optSho').classList.toggle('active', m === 'shorts');
+}
+function toggleStreamKey(){ const k = $('streamKey'); if(k) k.type = k.type === 'password' ? 'text' : 'password'; }
+async function changePassword(){
+  const oldPass = prompt('Old password দিন:'); if (oldPass === null) return;
+  const pass = prompt('New password দিন:'); if (!pass) return;
+  const res = await fetch('/change-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: sessionToken, oldPass, pass }) });
+  alert(res.ok ? 'Password changed!' : await res.text());
+}
+
+function updateUI(isLive){
+  $('statusText').innerText = isLive ? 'Status: Live Stream Started!' : 'Status: Ready to Stream';
+  $('buttonArea').innerHTML = isLive ? `<button id="stopBtn" class="stop-btn" onclick="stopStream()">Stop Live Stream</button>` : `<button id="startBtn" class="start-btn" onclick="startStream()">Start Live Stream</button>`;
+}
+function startSyncTimer(){
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (!startTime) return;
+    $('timer').innerText = formatMs(Date.now() - startTime);
+    updateRemainingDisplays();
+    if (latestRemainingMs !== null && getCurrentRemainingMs() <= 0) {
+      $('userRemaining').innerText = '00:00:00';
+      $('menuRemainTime').innerText = '00:00:00';
+    }
+  }, 1000);
+}
+function stopLocalTimer(){
+  clearInterval(timerInterval);
+  startTime = null;
+  $('timer').innerText = '00:00:00';
+  updateRemainingDisplays();
+}
+
+async function refreshStatus(){
+  if (!sessionToken || sessionToken === 'admin') return;
+  const res = await fetch(`/status?token=${encodeURIComponent(sessionToken)}`);
+  if (res.status === 403) { alert('আপনার account নেই / delete করা হয়েছে'); logout(); return; }
+  const d = await res.json();
+  $('menuLiveTime').innerText = totalToText(d.usedTime || d.totalTime || 0);
+  latestRemainingMs = d.remainingMs;
+  remainingBaseAt = Date.now();
+  $('menuAccountStatus').innerText = d.limitFinished ? 'Limit Finished' : 'Active';
+  $('userLimitType').innerText = d.limitType === 'limited' ? `${d.limitMinutes} min` : 'Unlimited';
+  if (d.isActive) {
+    startTime = d.startTime;
+    updateUI(true);
+    updateRemainingDisplays();
+    startSyncTimer();
+  } else {
+    updateUI(false);
+    stopLocalTimer();
+  }
+  if (d.limitFinished && !lastLimitNotice) { lastLimitNotice = true; showLimitNotice(); }
+  if (!d.limitFinished) lastLimitNotice = false;
+}
+
+async function startStream(){
+  const key = $('streamKey').value.trim();
+  if (!key) return alert('Stream Key missing!');
+  const type = $('sourceType').value;
+  const fd = new FormData();
+  fd.append('type', type);
+  fd.append('platform', $('platform').value);
+  fd.append('key', key);
+  fd.append('loop', $('loopStream').checked);
+  fd.append('mode', $('liveMode').value);
+  fd.append('token', sessionToken);
+  if (type === 'link') {
+    const source = $('videoSource').value.trim();
+    if (!source) return alert('Video URL দিন');
+    fd.append('source', source);
+  } else {
+    const file = $('videoFile').files[0];
+    if (!file) return alert('Video file select করুন');
+    fd.append('videoFile', file);
+  }
+  const btn = $('startBtn');
+  btn.innerText = 'Connecting...'; btn.disabled = true;
+  const xhr = new XMLHttpRequest();
+  xhr.upload.onprogress = e => {
+    if (!e.lengthComputable) return;
+    const p = Math.round((e.loaded/e.total)*100);
+    $('progressBox').style.display = 'block';
+    $('progFill').style.width = p + '%';
+    const mbLoaded = (e.loaded / (1024 * 1024)).toFixed(1);
+    const mbTotal = (e.total / (1024 * 1024)).toFixed(1);
+    $('progText').innerText = `Uploading... ${p}% (${mbLoaded} MB / ${mbTotal} MB)`;
+  };
+  xhr.onload = async () => {
+    btn.disabled = false; btn.innerText = 'Start Live Stream';
+    setTimeout(() => $('progressBox').style.display = 'none', 2000);
+    if (xhr.status === 200) { alert('Live Started!'); await refreshStatus(); }
+    else if (xhr.responseText.includes('LIMIT_FINISHED')) showLimitNotice();
+    else alert(xhr.responseText || 'Server Error!');
+  };
+  xhr.open('POST', '/start-stream', true);
+  xhr.send(fd);
+}
+async function stopStream(){
+  if (!confirm('Stop Live?')) return;
+  const res = await fetch('/stop-stream', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: sessionToken }) });
+  alert(res.ok ? 'Stopped!' : await res.text());
+  await refreshStatus();
+}
+
+async function loadUsers(){
+  if (sessionToken !== 'admin') return;
+  const res = await fetch(`/admin/users?token=${encodeURIComponent(sessionToken)}`);
+  if (!res.ok) return;
+  adminUsersCache = await res.json();
+  updateAdminMetrics();
+
+  // typing fix: user/pass input-এ টাইপ করার সময় auto refresh করলে form reset/cut হয়ে যায়।
+  // তাই input/select focus থাকলে শুধু metrics update হবে, details redraw হবে না।
+  const focusedInDetails = $('adminDetailsContent') && $('adminDetailsContent').contains(document.activeElement);
+  const activeTag = document.activeElement ? document.activeElement.tagName : '';
+  if (focusedInDetails && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeTag)) return;
+
+  if ($('adminDetailsTitle')?.innerText.toLowerCase().includes('live')) showAdminLiveNow(false);
+  else if ($('adminDetailsTitle')?.innerText.toLowerCase().includes('settings')) showAdminSettings(false);
+  else showAdminUsers(activeAdminFilter, false);
+}
+function updateAdminMetrics(){
+  const users = visibleAdminUsers();
+  $('adminTotalUsers').innerText = users.length;
+  $('adminLiveNow').innerText = users.filter(u => adminUsersCache[u].isActive).length;
+  $('adminUnlimited').innerText = users.filter(u => (adminUsersCache[u].limitType || 'unlimited') !== 'limited').length;
+  $('adminLimited').innerText = users.filter(u => adminUsersCache[u].limitType === 'limited').length;
+}
+function setMetric(id){ document.querySelectorAll('.admin-metric').forEach(x => x.classList.remove('active')); $(id)?.classList.add('active'); }
+function setDetails(icon, title, sub, html){ $('adminDetailsIcon').innerText = icon; $('adminDetailsTitle').innerText = title; $('adminDetailsSubtitle').innerText = sub; $('adminDetailsContent').innerHTML = html; }
+function limitLabel(d){ return d.limitType === 'limited' ? `${d.limitMinutes || 0} min` : 'Unlimited'; }
+function remainingLabel(d){ return d.limitType === 'limited' ? formatMs(d.remainingMs) : 'Unlimited'; }
+function passOf(d){ return d.pass || d.password || ''; }
+function userStatusBadge(d){ if (d.limitFinished) return '<span class="badge expired">Expired</span>'; if (d.isActive) return '<span class="badge live">LIVE</span>'; return '<span class="badge">Active</span>'; }
+
+function adminAddUserForm(){
+  return `<div class="add-user-form">
+    <input type="text" id="newUserName" class="text-input" placeholder="New user">
+    <input type="text" id="newUserPass" class="text-input" placeholder="Password">
+    <div class="limit-row"><button class="limit-toggle ${selectedLimitType==='unlimited'?'active':''}" onclick="setNewLimitType('unlimited')">∞ Unlimited</button><button class="limit-toggle ${selectedLimitType==='limited'?'active':''}" onclick="setNewLimitType('limited')">⏱ Limited</button></div>
+    <input type="number" id="newLimitMinutes" class="text-input ${selectedLimitType==='unlimited'?'hidden':''}" placeholder="Limit minutes, example: 60" min="1">
+    <button class="add-user-btn" onclick="addUser()">+ Add User</button>
+  </div>`;
+}
+function setNewLimitType(type){ selectedLimitType = type; showAdminUsers(activeAdminFilter, false); }
+
+function showAdminUsers(filter='all', scroll=true){
+  activeAdminFilter = filter || 'all'; setMetric(filter === 'limited' ? 'metricLimited' : filter === 'unlimited' ? 'metricUnlimited' : 'metricUsers');
+  const cards = visibleAdminUsers().filter(u => {
+    if (filter === 'limited') return adminUsersCache[u].limitType === 'limited';
+    if (filter === 'unlimited') return adminUsersCache[u].limitType !== 'limited';
+    return true;
+  }).map(u => userCard(u, adminUsersCache[u])).join('') || '<div class="user-card">No users found</div>';
+  setDetails('👥', 'Users Manager', 'Add user, unlimited/limited, edit, delete', adminAddUserForm() + `<div class="user-list">${cards}</div>`);
+}
+function userCard(u,d){
+  if (String(u).toLowerCase() === 'admin') return '';
+  const user = safeArg(u);
+  const remClass = d.limitType === 'limited' && Number(d.remainingMs) <= 0 ? 'remaining-expired' : 'remaining-good';
+  return `<div class="user-card">
+    <div class="user-card-top"><div class="user-name">${safeText(u)}</div>${userStatusBadge(d)}</div>
+    <div class="user-info">
+      <span>Password: <b class="${u === 'admin' ? 'admin-hidden-pass' : ''}">${u === 'admin' ? 'Hidden' : safeText(passOf(d))}</b></span>
+      <span>Limit: <b>${safeText(limitLabel(d))}</b></span>
+      <span>Used: <b>${totalToText(d.usedTime || d.totalTime || 0)}</b></span>
+      <span>Remaining: <b class="${remClass}">${safeText(remainingLabel(d))}</b></span>
+      <span class="key-row">Stream Key: <b>${safeText(d.streamKey || d.lastStreamKey || 'Not saved')}</b> <button class="copy-key-btn" onclick="copyStreamKey('${safeArg(d.streamKey || d.lastStreamKey || '')}')" ${!(d.streamKey || d.lastStreamKey) ? 'disabled' : ''}>Copy</button></span>
+    </div>
+    <div class="action-grid">
+      <button class="mini-btn blue" onclick="changeUserPassword('${user}')">Edit Pass</button>
+      <button class="mini-btn blue" onclick="editUserLimit('${user}')">Set Limit</button>
+      <button class="mini-btn orange" onclick="addTime('${user}')">Add Time</button>
+      <button class="mini-btn orange" onclick="resetTime('${user}')">Reset</button>
+      <button class="mini-btn red" onclick="adminEndUserLive('${user}')" ${!d.isActive?'disabled':''}>End Live</button>
+      <button class="mini-btn red" onclick="deleteUser('${user}')">Delete</button>
+    </div>
+  </div>`;
+}
+function showAdminLiveNow(scroll=true){
+  setMetric('metricLive');
+  const liveUsers = visibleAdminUsers().filter(u => adminUsersCache[u].isActive);
+  const html = liveUsers.map(u => userCard(u, adminUsersCache[u])).join('') || '<div class="user-card">এখন কোনো user live করছে না।</div>';
+  setDetails('📡', 'Live Now', 'Admin থেকে user live end করতে পারবেন', `<div class="user-list">${html}</div>`);
+}
+function showAdminSettings(){
+  setDetails('⚙', 'Settings', 'Admin tools', `<div class="user-list"><div class="user-card"><button class="add-user-btn" onclick="logout()">Logout</button></div></div>`);
+}
+async function addUser(){
+  const user = $('newUserName').value.trim(); const pass = $('newUserPass').value.trim();
+  const limitMinutes = Number($('newLimitMinutes')?.value || 0);
+  if (!user || !pass) return alert('User/password দিন');
+  if (selectedLimitType === 'limited' && !limitMinutes) return alert('Limit minutes দিন');
+  const res = await fetch('/admin/add-user', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: sessionToken, user, pass, limitType: selectedLimitType, limitMinutes }) });
+  alert(res.ok ? 'User Added!' : await res.text()); await loadUsers();
+}
+
+async function copyStreamKey(key){
+  if (!key) return alert('Stream key এখনও saved হয়নি। User live start করলে key save হবে।');
+  try {
+    await navigator.clipboard.writeText(key);
+    alert('Stream key copied!');
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = key;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    alert('Stream key copied!');
+  }
+}
+
+async function changeUserPassword(user){
+  const pass = prompt(`${user} এর নতুন password দিন:`); if (!pass) return;
+  const res = await fetch('/admin/change-user-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: sessionToken, user, pass }) });
+  alert(res.ok ? 'Password updated!' : await res.text()); await loadUsers();
+}
+async function editUserLimit(user){
+  const type = confirm('OK দিলে Limited, Cancel দিলে Unlimited হবে') ? 'limited' : 'unlimited';
+  let limitMinutes = 0;
+  if (type === 'limited') { limitMinutes = Number(prompt('Limit minutes দিন:', '60') || 0); if (!limitMinutes) return; }
+  const res = await fetch('/admin/update-user-limit', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: sessionToken, user, limitType: type, limitMinutes }) });
+  alert(res.ok ? 'Limit updated!' : await res.text()); await loadUsers();
+}
+async function addTime(user){
+  const minutes = Number(prompt('কত মিনিট add করবেন?', '30') || 0); if (!minutes) return;
+  const res = await fetch('/admin/add-time', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: sessionToken, user, minutes }) });
+  alert(res.ok ? 'Time added!' : await res.text()); await loadUsers();
+}
+async function resetTime(user){
+  if (!confirm(`${user} এর live time reset করবেন?`)) return;
+  const res = await fetch('/admin/reset-time', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: sessionToken, user }) });
+  alert(res.ok ? 'Time reset!' : await res.text()); await loadUsers();
+}
+async function adminEndUserLive(user){
+  if (!confirm(`${user} এর live end করবেন?`)) return;
+  const res = await fetch('/admin/stop-user-stream', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: sessionToken, user }) });
+  alert(res.ok ? 'Live ended!' : await res.text()); await loadUsers();
+}
+async function deleteUser(user){
+  if (!confirm(`${user} delete করবেন?`)) return;
+  const res = await fetch('/admin/delete-user', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: sessionToken, user }) });
+  alert(res.ok ? 'Deleted!' : await res.text()); await loadUsers();
+}
+</script>
+</body>
+</html>
